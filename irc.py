@@ -104,7 +104,8 @@ class IRCClient:
         self.inited = True
 
         # TODO: DEBUG
-        self.events_run = []
+        self.all_events = [name for name in dir(self) if name[:3] == "on_"]
+        self.used_events = []
 
     def debug_log(self, *args):
         msg = " ".join(map(str, args))
@@ -184,6 +185,43 @@ class IRCClient:
         data += "\r\n"
         self.send_buffer.append(data)
 
+    def maintain(self):
+        """Maintain the IRC server connection.
+
+        Handles the socket sending and receiving, and checking that the connection is alive.
+        Returns False if the socket is dead.
+        """
+        # Try and check the socket state
+        try:
+            sockl = [self.socket]
+            readable, writable, errored = select.select(sockl, sockl, sockl, self.select_interval)
+            time.sleep(self.select_interval)  # TODO: do we really need this?
+        except (socket.error) as err:
+            self.debug_log("mainloop()", "select error:", socket.error, err)
+            return False
+        # Try to read from the socket
+        if self.socket in readable:
+            if not self.receive_to_buffer():  # If no data received, sock is dead
+                self.disconnect()
+                return False
+            return True
+        # Try to send to the socket
+        elif self.socket in writable:
+            if not self.process_send_buffer():  # Try to send and break on failure
+                return False
+        # Die if the socket is errored
+        elif self.socket in errored:
+            self.debug_log("mainloop()", "socket errored")
+            return False
+        else:
+            self.debug_log("mainloop()", "socket inaccessible")
+        self.process()
+        return True
+
+    #
+    # IRC Actions
+    #
+
     def introduce(self, nick=None, ident=None, realname=None):   # Send NICK and USER messages
         self.debug_log("Introducing as:", "nick:", nick, ", ident:", ident, ", realname:", realname)
         if nick is None:
@@ -202,44 +240,59 @@ class IRCClient:
         self.set_nick(nick)
         self.send("NICK {}".format(nick))
 
-    def join(self, channels):
-        self.send("JOIN {}".format(",".join(channels)))
+    def join_channels(self, channels, keys=[]):
+        if isinstance(channels, str):
+            channels = [channels]
+        chanlist = ",".join(channels)
+        keylist = ",".join(keys)
+        self.send("JOIN {} {}".fromat(chanlist, keylist))
 
-    def maintain(self):
-        """Maintain the IRC server connection.
+    def part_channels(self, channels):
+        if type(channels) in [type(u""), type("")]:
+            channels = [channels]
+        chanlist = ",".join(channels)
+        self.SendLine("PART {}".format(chanlist))
 
-        Handles the socket sending and receiving, and checking that the connection is alive.
-        Returns False if the socket is dead.
-        """
-        # Try and check the socket state
-        try:
-            sockl = [self.socket]
-            readable, writable, errored = select.select(sockl, sockl, sockl, self.select_interval)
-            time.sleep(self.select_interval)  # TODO: do we really need this?
-        except (socket.error) as err:
-            self.debug_log("mainloop()", "select error:", socket.error, err)
+    def join(self, channel, keys=[]):
+        self.join_channels(channel, keys)
+
+    def part(self, channel):
+        self.part_channels(channel)
+
+    def whois(self, nick):
+        self.send("WHOIS {} {}".format(nick, nick))
+
+    def kick(self, chan, nick, message=""):
+        self.send("KICK {} {} {}".format(chan, nick, message))
+
+    def privmsg(self, dest, msg):
+        if not msg:
             return False
-        # Try to read from the socket
-        if self.socket in readable:
-            #self.debug_log("MAINTAIN:", "readable")
-            if not self.receive_to_buffer():  # If no data received, sock is dead
-                self.disconnect()
-                return False
-            return True
-        # Try to send to the socket
-        elif self.socket in writable:
-            #self.debug_log("MAINTAIN:", "writable")
-            if not self.process_send_buffer():  # Try to send and break on failure
-                return False
-        # Die if the socket is errored
-        elif self.socket in errored:
-            #self.debug_log("MAINTAIN:", "errored")
-            self.debug_log("mainloop()", "socket errored")
+        # TODO: wrap long msgs into multiple PRIVMSGs
+        self.send("PRIVMSG {} :{}".format(dest, msg))
+
+    def notice(self, dest, msg):
+        if not msg:
             return False
+        # TODO: wrap long msgs into multiple NOTICEs
+        self.send("NOTICE {} :{}".format(dest, msg))
+
+    def set_channel_user_modes(self, chan, nickmodes, operation=True):
+        if operation:
+            modes = "+"
         else:
-            self.debug_log("mainloop()", "socket inaccessible")
-        self.process()
-        return True
+            modes = "-"
+        nicks = []
+        for item in nickmodes:
+            nicks.append(item[0])
+            modes += item[1]
+        self.send(u"MODE {} {} {}".format(chan, modes, (" ".join(nicks))))
+
+    def set_channel_topic(self, chan, topic):
+        self.send("TOPIC {} :{}".format(chan, topic))
+
+    def set_channel_modes(self, chan, modes):
+        self.send("MODE {} {}".format(chan, modes))
 
     #
     # Client Events
@@ -257,6 +310,7 @@ class IRCClient:
         self.irc_connected = 0
 
     def on_irc_ready(self):
+        self._dispatch_event()
         pass
 
     def on_receive(self, data):
@@ -288,7 +342,7 @@ class IRCClient:
 
     def on_end_motd(self):
         """Called when the MOTD ends or when there is no MOTD."""
-        # self._dispatch_event()
+        self._dispatch_event()
 
     def on_nick_in_use(self, nick, data):
         self._dispatch_event()
@@ -296,11 +350,11 @@ class IRCClient:
 
     def on_welcome_info(self, data):
         """Sent when welcom info is received."""  # TODO: More elaborate docstring.
-        # self._dispatch_event()
+        self._dispatch_event()
 
     def on_support_info(self, data):
         """Sent when support info is received."""  # TODO: More elaborate docstring.
-        # self._dispatch_event()
+        self._dispatch_event()
 
     def on_server_info(self, data):
         """Sent when server info is received."""  # TODO: More elaborate docstring.
@@ -315,7 +369,17 @@ class IRCClient:
     def on_whois_hostname(self, nick, hostname):
         self._dispatch_event()
 
-    def on_channel_topic_is(self, channel, text_data):
+    def on_privmsg(self, nick, target, data):
+        self._dispatch_event()
+
+    def on_notice(self, nick, target, data):
+        self._dispatch_event()
+
+    def on_quit(self, nick, reason):
+        self._dispatch_event()
+
+    # Channel specific events
+    def on_channel_topic_is(self, channel, data):
         self._dispatch_event()
 
     def on_channel_topic_meta(self, channel, nick, utime):
@@ -327,12 +391,49 @@ class IRCClient:
     def on_channel_needs_password(self, channel, text_data):
         self._dispatch_event()
 
+    def on_channel_creation_time(self, channel, value):
+        self._dispatch_event()
+
+    def on_channel_modes_are(self, channel, modes):
+        self._dispatch_event()
+
+    def on_channel_has_users(self, channel, users):
+        self._dispatch_event()
+
+    def on_i_joined(self, target):
+        self._dispatch_event()
+
+    def on_channel_join(self, target, nick):
+        self._dispatch_event()
+
+    def on_channel_part(self, target, nick, data):
+        self._dispatch_event()
+
+    def on_channel_topic_changed(self, target, nick, topic):
+        self._dispatch_event()
+
+    def on_channel_kick(self, target, who, nick, reason):
+        self._dispatch_event()
+
+    def on_user_nick_changed(self, nick, newnick):
+        self._dispatch_event()
+
+    def on_my_modes_changed(self, modes):
+        self._dispatch_event()
+
+    def on_channel_user_modes_changed(self, target, users, nick):
+        self._dispatch_event()
+
+    def on_channel_modes_changed(self, target, modes, nick):
+        self._dispatch_event()
+
+    # All events
     def on_event(self, name, args):
         """Called for each event that occurs, with event name and arguments."""
         self.debug_log("on_event", name, args)
         # TODO: DEBUG
-        if name not in self.events_run:
-            self.events_run.append(name)
+        if name not in self.used_events:
+            self.used_events.append(name)
 
     def _dispatch_event(self):
         """Should be called from event handling methods.
@@ -419,15 +520,13 @@ class IRCClient:
 
     def process_send_buffer(self):
         """Send a single line from the send buffer."""
-        # self.debug_log("process_send_buffer")
         if self.send_buffer != []:
             # Make sure we don't send lines to the server too often and get kicked out
             if self.last_send_time is None or time.time() - self.last_send_time > self.send_throttling:
                 line = self.send_buffer.pop(0)
                 if not self.send_all_to_socket(line):
-                    self.debug_log("process_send_buffer fail")
+                    self.debug_log("process_send_buffer: send_all_to_socket failed")
                     return False
-                self.debug_log("SEND:", line[:-2])
                 self.last_send_time = time.time()
         return True
 
@@ -455,6 +554,7 @@ class IRCClient:
     # ==============================================================================================
     # Warning: Here be dragons!
     # From here on we do stupidply manual parsing of the received IRC commands
+    # TODO: Use regex.
     # ==============================================================================================
 
     def get_text_data(self, line):
@@ -468,30 +568,39 @@ class IRCClient:
 
     def get_clean_nick(self, nick):
         """Remove the mode char from a nick if it exists."""
-        if self.get_mode_chr(nick) != irc_constants.MODE_CHAR_NONE:
+        if self.get_mode_char(nick) != irc_constants.MODE_CHAR_NONE:
             return nick[1:]
         return nick
 
-    def get_mode_chr(self, s):
+    def get_mode_char(self, s):
         """Get the mode from an irc nick."""
         if s[:1] in [irc_constants.MODE_CHAR_VOICE, irc_constants.MODE_CHAR_OP]:
             return s[:1]
         return irc_constants.MODE_CHAR_NONE
 
+    def get_nick_mode(self, nick):
+        modechr = self.get_mode_char(nick)
+        if modechr == irc_constants.MODE_CHAR_NONE:
+            return irc_constants.MODE_NONE
+        elif modechr == irc_constants.MODE_CHAR_OP:
+            return irc_constants.MODE_OP
+        elif modechr == irc_constants.MODE_CHAR_VOICE:
+            return irc_constants.MODE_VOICE
+
     def is_channel_name(self, name):
         return name[0] in irc_constants.CHANNEL_PREFIXES
 
-    def is_command_line(self, line):
+    def get_text_command(self, line):
         # Commands that are implemented
         cmds = ["ping", "pong", "join", "part", "kick", "topic", "quit", "privmsg", "nick", "mode", "notice"]
         parts = line.split(" ")
         if len(parts) < 2:
             return False
         if parts[1].lower() in cmds:
-            return True
+            return parts[1].lower()
         return False
 
-    def is_numeric_line(self, line):
+    def get_numeric_command(self, line):
         parts = line.split(" ")
         if len(parts) > 1:
             try:
@@ -500,6 +609,19 @@ class IRCClient:
             except:
                 return False
         return False
+
+    def parse_nick_host(self, line):
+        nick = ""
+        part = line.split(" ")[0][1:]
+        ind = part.find("!")
+        if ind != -1:
+            nick = part[:ind]
+            hostname = part[ind+1:]
+        else:
+            hostname = part[1:]
+        # if nick != "":
+            # self.OnUserHostname(nick, hostname)
+        return nick, hostname
 
     # Beware, this is the real monster!
     # TL;DR: This calls various event methods with relevant arguments
@@ -512,8 +634,10 @@ class IRCClient:
         text_data = self.get_text_data(line)
         # The first word of the line delimited first whitespace
         first_word = parts[0].lower()
+        # False or a IRC text command
+        command = self.get_text_command(line)
         # False or a numeric IRC command if one exists
-        numeric = self.is_numeric_line(line)
+        numeric = self.get_numeric_command(line)
 
         # Basic commands
         if first_word in ["ping", "error", "notice"]:
@@ -528,6 +652,71 @@ class IRCClient:
                 throttle_indicators = [":closing link:", "throttled", "g-lined"]
                 if any(indicator in text for indicator in throttle_indicators):
                     self.on_connect_throttled(text_data)
+            else:
+                return False
+
+        # IRC text commands
+        elif command:
+            nick, hostname = self.parse_nick_host(line)
+            target = parts[2]  # Channel or user
+            if command == "pong":
+                self.on_ping(text_data)
+            elif command == "join":
+                if text_data is not False:
+                    channel = text_data
+                else:
+                    channel = parts[2]
+                if nick == self.current_nick:
+                    self.on_i_joined(target)
+                else:
+                    self.on_channel_join(channel, nick)
+            elif command == "part":
+                if text_data is not False:
+                    target = text_data
+                self.on_channel_part(target, nick, text_data)
+            elif command == "topic":
+                self.on_channel_topic_changed(target, nick, text_data)
+            elif command == "privmsg":
+                self.on_privmsg(nick, target, text_data)
+            elif command == "notice":
+                if nick:
+                    self.on_notice(nick, target, text_data)
+            elif command == "quit":
+                self.on_user_quit(nick, text_data)
+            elif command == "kick":
+                who = parts[3]
+                self.on_channel_kick(target, who, nick, text_data)
+            elif command == "nick":
+                self.on_user_nick_change(nick, text_data)
+            elif command == "mode":
+                if target == self.current_nick:
+                    modes = parts[3]
+                    self.on_my_modes_changed(modes)
+                else:
+                    types = ["-", "+"]
+                    modes = parts[3]
+                    if len(parts) > 4:      # Channel user modes are being set
+                        nicks = parts[4:]
+                        i = 0
+                        operation = True
+                        users = []
+                        for mode in modes:
+                            char = modes[i]
+                            if char in types:
+                                if char == "-":
+                                    operation = False
+                                elif char == "+":
+                                    operation = True
+                                modes = modes[1:]
+                                continue
+                            modechr = modes[i]
+                            user = (nicks[i], modechr, operation)
+                            users.append(user)
+                            i += 1
+                        self.on_channel_user_modes_changed(target, users, nick)
+                    else:
+                        modes = parts[3]
+                        self.on_channel_modes_changed(target, modes, nick)
             else:
                 return False
 
@@ -559,13 +748,12 @@ class IRCClient:
                 self.on_irc_ready()
             # Channel specific numeric commands
             elif numeric in [324, 329, 332, 333, 353, 366, 473]:  # Channel numerics
-                self.debug_log("CHAN LINE:", line)
                 channel = parts[3]
                 # Channel creation and modes
                 if numeric in [324, 329]:
                     value = parts[4]
                     if numeric == 329:                                  # Channel creation time
-                        self.on_channel_created(channel, value)
+                        self.on_channel_creation_time(channel, value)
                     elif numeric == 324:                                # Channel modes
                         modes = list(value.replace("+", ""))
                         self.on_channel_modes_are(channel, modes)
@@ -577,15 +765,15 @@ class IRCClient:
                     nick = parts[4]
                     utime = int(parts[5])
                     self.on_channel_topic_meta(channel, nick, utime)
-                # elif numeric == 353:                                    # Reply to NAMES
-                #     channel = parts[4]
-                #     nicks = self.get_text_data(line).split(" ")
-                #     users = []
-                #     for raw_nick in nicks:
-                #         nick = self.GetCleanNick(raw_nick)
-                #         mode = self.GetMode(raw_nick)
-                #         users.append((nick, mode))
-                #     self.OnChannelHasUsers(channel, users)
+                elif numeric == 353:                                    # Reply to NAMES
+                    channel = parts[4]
+                    nicks = text_data.split(" ")
+                    users = []
+                    for raw_nick in nicks:
+                        nick = self.get_clean_nick(raw_nick)
+                        mode = self.get_nick_mode(raw_nick)
+                        users.append((nick, mode))
+                    self.on_channel_has_users(channel, users)
                 elif numeric == 366:                                    # End of NAMES
                     pass
                 elif numeric == 473:                                    # Channel is invite only
@@ -604,12 +792,12 @@ class IRCClient:
 
 
 class CustomIRCClient(IRCClient):
-    def on_connected(self):
-        IRCClient.on_connected(self)
-        self.send("JOIN #wavi")
+    # def on_connected(self):
+        # IRCClient.on_connected(self)
+        # self.send("JOIN #wavi")
 
     def on_irc_ready(self):
-        IRCClient.on_connected(self)
+        IRCClient.on_irc_ready(self)
         self.send("JOIN #wavi")
 
 
@@ -617,7 +805,7 @@ def test_blocking(irc):
     # Test the IRC default client implementation (blocking)
     irc.init()
     irc.run()
-    print(irc.events_run)
+    return irc
 
 
 def test_nonblocking(irc):
@@ -625,20 +813,19 @@ def test_nonblocking(irc):
     irc.init()
     if irc.connect():
         while irc.irc_connected:
-            irc.maintain()
-            time.sleep(0.05)
-    print(irc.events_run)
+            try:
+                irc.maintain()
+                time.sleep(0.05)
+            except KeyboardInterrupt:
+                break
+    return irc
 
 
 def test_custom():
     # Test the IRC client with a custom non-blocking implementation
     irc = CustomIRCClient("irc.quakenet.org", 6667, "bx2-draft")
-    irc.init()
-    if irc.connect():
-        while irc.irc_connected:
-            irc.maintain()
-            time.sleep(0.05)
-    print(irc.events_run)
+    test_nonblocking(irc)
+    return irc
 
 
 def run(mode=None):
@@ -654,5 +841,11 @@ def run(mode=None):
 
 if __name__ == "__main__":
     # Run the IRC client test
-    run("custom")
-    # run()
+    irc = run("custom")
+    unused_events = [name for name in irc.all_events if name not in irc.used_events]
+    # TESTED: on_connected, on_receive, on_ping, on_server_info, on_end_motd, on_irc_ready, on_my_modes_changed, on_i_joined, on_channel_topic_is, on_channel_topic_meta, on_channel_has_users, on_privmsg, on_channel_topic_changed, on_channel_user_modes_changed, on_channel_kick
+    print("")
+    print("USED EVENTS:")
+    print(irc.used_events)
+    print("UNUSED EVENTS:")
+    print(unused_events)
