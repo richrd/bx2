@@ -7,14 +7,14 @@
      * Kludgy event system
  * Kludgy config
  * Custom logging system
+     * Bloated command line logging
      * Use logging library instead?
- * Bloated command line logging
  * Unreliable 'bookkeeping' (tracking users, channels and the bot nick)
  * User privileges are global (No channel specific permissions)
  * IRC lib only has multiple callback events (Can't listen to all events via one callback)
  * Only config and modules can be reloaded, but not the core
      * Would be nice to be able to reload core classes
-   
+
 
 ## Architecture
 
@@ -56,6 +56,6 @@
          * name
          * level
          * servers
-             * server ...
+             * server
          * hostnames
-             * hostname ...
+             * hostname
