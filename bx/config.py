@@ -33,9 +33,15 @@ class Config:
         return self.load_defaults()
 
     def load(self):
-        # self.load_config()
+        self.load_config()
         self.load_servers()
-        # self.load_accounts()
+        self.load_accounts()
+
+    def get_servers(self):
+        return self.servers
+
+    def get_accounts(self):
+        return self.accounts
 
     def set_config_dir(self, path):
         self.config_dir = path
@@ -51,24 +57,39 @@ class Config:
         self.defaults = defaults
         return True
 
+    def load_config(self):
+        path = os.path.join(self.config_dir, self.main_filename)
+        config = self.load_config_file(path)
+        if not config:
+            self.logger.error("Failed to load default config file! ('{0}')".format(path))
+            self.config = dict(self.defaults)
+            return False
+        self.config = config
+        self.update(self.config, self.defaults)
+        return True
+
     def load_servers(self):
         files = self.get_config_files(self.server_dir)
         server_configs = self.load_config_files(self.server_dir, files)
         if not server_configs:
             self.logger.warning("No servers configured!")
             return False
+        self.logger.debug("self.config: {}".format(self.config))
         for server in server_configs:
-            self.servers[server["name"]] = server
+            defaults = dict(self.config["server"])
+            self.logger.debug("defaults: {}".format(defaults))
+            self.logger.debug("server: {}".format(server))
+            self.servers[server["name"]] = self.update(defaults, server)
         return True
 
     def load_accounts(self):
-        files = self.get_config_files(self.server_dir)
+        files = self.get_config_files(self.account_dir)
         account_configs = self.load_config_files(self.account_dir, files)
         if not account_configs:
             self.logger.warning("No accounts configured!")
             return False
         for account in account_configs:
-            self.accounts[account["name"]] = account
+            self.accounts[account["username"]] = account
         return True
 
     def load_config_files(self, path, files):
@@ -157,11 +178,11 @@ class Config:
 
     def update(self, d, u):
         """Merge two dicts. Used for merging config to defaults."""
-        for k, v in u.iteritems():
+        # for k, v in u.iteritems():
+        for k, v in u.items():
             if isinstance(v, collections.Mapping):
                 r = self.update(d.get(k, {}), v)
                 d[k] = r
             else:
                 d[k] = u[k]
         return d
-
