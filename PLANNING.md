@@ -28,8 +28,11 @@
  
 ### Config
  * global-config
-     * aliases
-     * 
+     * send_throttle
+     * cmd_prefix
+     * cmd_separator
+     * cmd_throttle
+     * module_aliases
 
  * server
      * host
@@ -45,11 +48,11 @@
          * nick_suffix
          * realname
          * ident
-         
+
      * channels
          * channel
              * modes
-         
+
 
  * accounts
      * account
