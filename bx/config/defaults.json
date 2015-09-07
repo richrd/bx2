@@ -1,0 +1,13 @@
+{
+    "server": {
+        "nick": "bx2",
+        "nick_suffix": "_",
+        "ident": "bx2",
+        "realname": "bx2",
+        "cmd_prefix": ".",
+        "cmd_separator": "\u00a7",
+        "cmd_throttle": 1.5,
+        "send_throttle": 0.5,
+        "channels": {}
+    }
+}
