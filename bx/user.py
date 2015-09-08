@@ -26,6 +26,8 @@ class User:
 
         self.account = False     # If False the user hasn't logged in
 
+        self.bot.add_event_handler(self.on_event)
+
     def __repr__(self):
         return "<" + self.nick + ">"
 
@@ -34,3 +36,6 @@ class User:
 
     def get_nick(self):
         return self.nick
+
+    def on_event(self, event):
+        pass

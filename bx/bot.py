@@ -5,12 +5,12 @@ The Bot class for handling a single IRC server.
 import logging
 
 from . import irc
+from .event import Event
 from .user import User
 from .windows import Channel, Query
 
 
 class Bot:
-    # def __init__(self, app, host=None, port=None, nick=None):
     def __init__(self, app, name, config):
         self.app = app
         self.name = name
@@ -18,6 +18,9 @@ class Bot:
 
         self.logger = logging.getLogger(__name__)
         self.irc = irc.IRCClient()
+
+        # Event handlers (callbacks that are called with each event that occurs)
+        self.event_handlers = []
 
         # Windows for channels and queries
         self.windows = []
@@ -47,8 +50,15 @@ class Bot:
         self.irc.set_realname(self.config["realname"])
 
     def on_event(self, name, args):
+        event = Event(self)
+        event._parse_from_irc_event(name, args)
         if name == "on_irc_ready":
             self.auto_join()
+        self.logger.debug("self.windows: {}".format(self.windows))
+        self.logger.debug("self.users: {}".format(self.users))
+
+    def add_event_handler(self, callback):
+        self.event_handlers.append(callback)
 
     def auto_join(self):
         self.irc.join_channels(self.config["channels"].keys())

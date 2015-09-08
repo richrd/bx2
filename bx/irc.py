@@ -88,11 +88,11 @@ class IRCClient:
         # Time of last sent PONG reply
         self.last_pong_time = None
         # Minimum time of inactivity before pinging the server (to check that the connection)
-        self.ping_after = 120  # 2 minutes
+        self.ping_after = 120  # 2 minutes TODO: Implement
         # Time of the last PING by the client
         self.last_client_ping_time = None
         # Maximum time of inactivity before reconnecting to the server
-        self.max_inactivity = 180  # 3 minutes
+        self.max_inactivity = 180  # 3 minutes TODO: Implement
 
         # Lines waiting to be sent to the IRC server
         self.send_buffer = []
@@ -102,12 +102,12 @@ class IRCClient:
         # Event handlers (callbacks called with events)
         self.event_handlers = []
 
-        # Indicate that init has been done
-        self.inited = True
-
-        # TODO: DEBUG
+        # TODO: Remove after debugging is complete
         self.all_events = [name for name in dir(self) if name[:3] == "on_"]
         self.used_events = []
+
+        # Indicate that init has been done
+        self.inited = True
 
     def debug_log(self, *args):
         msg = " ".join(map(str, args))
@@ -349,7 +349,7 @@ class IRCClient:
 
     def on_motd(self, data=""):
         """Called for each line in the MOTD (Message Of The Day)"""
-        # self._dispatch_event()
+        # self._dispatch_event()  # TODO: Enable
 
     def on_end_motd(self):
         """Called when the MOTD ends or when there is no MOTD."""
@@ -377,7 +377,7 @@ class IRCClient:
     def on_your_id(self, id, data):
         self._dispatch_event()
 
-    def on_parsed_user_hostname(self, nick, hostname):
+    def on_parse_nick_hostname(self, nick, hostname):
         self._dispatch_event()
 
     def on_whois_hostname(self, nick, hostname):
@@ -639,7 +639,7 @@ class IRCClient:
         else:
             hostname = part[1:]
         if nick != "":
-            self.on_parsed_user_hostname(nick, hostname)
+            self.on_parse_nick_hostname(nick, hostname)
         return nick, hostname
 
     # Beware, this is the real monster!
