@@ -16,7 +16,4 @@ class Message:
         self.dest = dest
 
     def __str__(self):
-        return "["+self.time+"] "+self.nick+" -> "+self.dest+" :"+self.text
-        return "["+,
         return "[{}] {} -> {} :{}".format(self.time, self.nick, self.dest, self.text)
-
