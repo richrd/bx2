@@ -10,6 +10,7 @@ import time
 import select
 import socket
 import inspect
+import logging
 import traceback
 
 from . import irc_constants
@@ -18,10 +19,13 @@ from . import irc_constants
 class IRCClient:
     """Independet IRC client that will connect and sit on an IRC server doing nothing.
 
-    It can be subclassed to do whatever, without needing to worry about the protocol.
+    It can be subclassed to do whatever, without any need to worry about the protocol.
     """
 
     def __init__(self, host="", port=6667, nick="bx-irc-lib"):
+        # Logging
+        self.logger = logging.getLogger(__name__)
+
         # Server details
         self.host = host
         self.port = port
@@ -34,6 +38,9 @@ class IRCClient:
         # User info
         self.realname = self.default_realname
         self.ident = self.default_ident
+
+        # The socket object for the connection
+        self.socket = None
 
         # TODO: Implement setter
         # How many seconds to wait between lines sent to the server
@@ -51,6 +58,13 @@ class IRCClient:
         # Maximum size for data sent to the IRC server
         self.max_send_length = 400
 
+        # Event handlers (callbacks called with events)
+        self.event_handlers = []
+
+        # TODO: Remove after debugging is complete
+        self.all_events = [name for name in dir(self) if name[:3] == "on_"]
+        self.used_events = []
+
         # Flag indicating if the client has been initialized
         self.inited = False
 
@@ -67,8 +81,6 @@ class IRCClient:
         # Flag indicating wether the client is running
         self.irc_running = False
 
-        # The socket object for the connection
-        self.socket = None
         # Timeout for connecting
         self.socket_timeout = 20
         # Maximum time to wait for socket select (checking if there's new activity on the socket)
@@ -101,10 +113,6 @@ class IRCClient:
 
         # Event handlers (callbacks called with events)
         self.event_handlers = []
-
-        # TODO: Remove after debugging is complete
-        self.all_events = [name for name in dir(self) if name[:3] == "on_"]
-        self.used_events = []
 
         # Indicate that init has been done
         self.inited = True
@@ -337,6 +345,7 @@ class IRCClient:
     def on_connect_throttled(self, reason=""):
         """Called when the server has throttled a connection attempt."""
         self.debug_log("Connection was throttled because:", reason)
+        self._dispatch_event()
 
     def on_ping(self, data):
         """Callend when a PING event is received."""
@@ -392,7 +401,7 @@ class IRCClient:
     def on_quit(self, nick, reason):
         self._dispatch_event()
 
-    def on_user_nick_changed(self, nick, newnick):
+    def on_nick_changed(self, nick, new_nick):
         self._dispatch_event()
 
     def on_my_modes_changed(self, modes):
@@ -459,10 +468,15 @@ class IRCClient:
 
         It automagically determins the event name and arguments given to it and forwards them to on_event.
         """
-        frame_info = inspect.getouterframes(inspect.currentframe())[1]
-        frame = frame_info[0]
-        name = frame_info[3]
-        args = self._get_frame_args(frame)
+        try:
+            frame_info = inspect.getouterframes(inspect.currentframe())[1]
+            frame = frame_info[0]
+            name = frame_info[3]
+            args = self._get_frame_args(frame)
+            args["time"] = time.time()
+        except Exception:
+            self.logger.exception("_dispatch_event failed")
+            return False
         self.on_event(name, args)
 
     def _get_frame_args(self, frame):
@@ -667,6 +681,8 @@ class IRCClient:
             elif first_word == "error":
                 # ERROR :Closing Link: bot by portlane.se.quakenet.org (G-lined)
                 # ERROR :Your host is trying to (re)connect too fast -- throttled
+                # ERROR :Your host is trying to (re)connect too fast -- throttled
+                self.debug_log("ERROR:", line)
                 text = line.lower()
                 throttle_indicators = [":closing link:", "throttled", "g-lined"]
                 if any(indicator in text for indicator in throttle_indicators):
@@ -701,12 +717,12 @@ class IRCClient:
                 if nick:
                     self.on_notice(nick, target, text_data)
             elif command == "quit":
-                self.on_user_quit(nick, text_data)
+                self.on_quit(nick, text_data)
             elif command == "kick":
                 who = parts[3]
                 self.on_channel_kick(target, who, nick, text_data)
             elif command == "nick":
-                self.on_user_nick_change(nick, text_data)
+                self.on_nick_changed(nick, text_data)
             elif command == "mode":
                 if target == self.current_nick:
                     modes = parts[3]
@@ -808,6 +824,73 @@ class IRCClient:
         else:
             return False
         return True
+
+    def _serialize(self):
+        serialized = {
+            "host": self.host,
+            "port": self.port,
+            "default_nick": self.default_nick,
+            "default_realname": self.default_realname,
+            "default_ident": self.default_ident,
+            "realname": self.realname,
+            "ident": self.ident,
+            "send_throttling": self.send_throttling,
+            "outgoing_encoding": self.outgoing_encoding,
+            "incomming_encodings": self.incomming_encodings,
+            "max_send_length": self.max_send_length,
+            "current_nick": self.current_nick,
+            "irc_connected": self.irc_connected,
+            "last_connect_time": self.last_connect_time,
+            "irc_ready": self.irc_ready,
+            "irc_running": self.irc_running,
+            "socket": self.socket,
+            "socket_timeout": self.socket_timeout,
+            "select_interval": self.select_interval,
+            "read_chunk_size": self.read_chunk_size,
+            "raw_buffer": self.raw_buffer,
+            "recv_buffer": self.recv_buffer,
+            "last_receive_time": self.last_receive_time,
+            "last_ping_time": self.last_ping_time,
+            "last_pong_time": self.last_pong_time,
+            "ping_after": self.ping_after,
+            "last_client_ping_time": self.last_client_ping_time,
+            "max_inactivity": self.max_inactivity,
+            "send_buffer": self.send_buffer,
+            "last_send_time": self.last_send_time,
+        }
+        return serialized
+
+    def _unserialize(self, serialized):
+        self.host = serialized["host"]
+        self.port = serialized["port"]
+        self.default_nick = serialized["default_nick"]
+        self.default_realname = serialized["default_realname"]
+        self.default_ident = serialized["default_ident"]
+        self.realname = serialized["realname"]
+        self.ident = serialized["ident"]
+        self.send_throttling = serialized["send_throttling"]
+        self.outgoing_encoding = serialized["outgoing_encoding"]
+        self.incomming_encodings = serialized["incomming_encodings"]
+        self.max_send_length = serialized["max_send_length"]
+        self.current_nick = serialized["current_nick"]
+        self.irc_connected = serialized["irc_connected"]
+        self.last_connect_time = serialized["last_connect_time"]
+        self.irc_ready = serialized["irc_ready"]
+        self.irc_running = serialized["irc_running"]
+        self.socket = serialized["socket"]
+        self.socket_timeout = serialized["socket_timeout"]
+        self.select_interval = serialized["select_interval"]
+        self.read_chunk_size = serialized["read_chunk_size"]
+        self.raw_buffer = serialized["raw_buffer"]
+        self.recv_buffer = serialized["recv_buffer"]
+        self.last_receive_time = serialized["last_receive_time"]
+        self.last_ping_time = serialized["last_ping_time"]
+        self.last_pong_time = serialized["last_pong_time"]
+        self.ping_after = serialized["ping_after"]
+        self.last_client_ping_time = serialized["last_client_ping_time"]
+        self.max_inactivity = serialized["max_inactivity"]
+        self.send_buffer = serialized["send_buffer"]
+        self.last_send_time = serialized["last_send_time"]
 
 
 class CustomIRCClient(IRCClient):
