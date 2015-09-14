@@ -12,7 +12,7 @@ from . import bot_windows
 from . import bot_message
 
 # Modules that require reloading
-__reload__ = [irc, irc_constants, bot_event, bot_user, bot_windows]
+__reload__ = [irc, irc_constants, bot_event, bot_user, bot_windows, bot_message]
 
 
 class Bot:

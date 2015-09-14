@@ -35,8 +35,40 @@ class User:
     def __str__(self):
         return "<{} / {}>".format(self.nick, self.hostname)
 
+    #
+    # Getters
+    #
+
     def get_nick(self):
         return self.nick
+
+    def get_hostname(self):
+        return self.hostname
+
+    def get_ident(self):
+        return self.ident
+
+    def get_online(self):
+        return self.online
+
+    def get_first_seen_time(self):
+        return self.first_seen_time
+
+    def get_quit_time(self):
+        return self.quit_time
+
+    def get_quit_reason(self):
+        return self.quit_reason
+
+    def get_last_active(self):
+        return self.last_active
+
+    def get_last_command(self):
+        return self.last_command
+
+    #
+    # Setters
+    #
 
     def set_nick(self, nick):
         self.nick = nick
@@ -44,11 +76,44 @@ class User:
     def set_hostname(self, hostname):
         self.hostname = hostname
 
-    def on_event(self, event):
-        pass
+    def set_ident(self, ident):
+        self.ident = ident
+
+    def set_online(self, online):
+        self.online = online
+
+    def set_first_seen_time(self, first_seen_time):
+        self.first_seen_time = first_seen_time
+
+    def set_quit_time(self, quit_time):
+        self.quit_time = quit_time
+
+    def set_quit_reason(self, quit_reason):
+        self.quit_reason = quit_reason
+
+    def set_last_active(self, last_active):
+        self.last_active = last_active
+
+    def set_last_command(self, last_command):
+        self.last_command = last_command
 
     #
-    # IRC Actions
+    # Events
+    #
+
+    def on_action(self):
+        self.last_active = time.time()
+
+    def on_event(self, event):
+        if event.user != self:
+            # All events that don't have a user
+            return False
+        self.on_action()
+        if event.name:
+            pass
+
+    #
+    # Actions
     #
 
     def privmsg(self, msg):

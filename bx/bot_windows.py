@@ -4,7 +4,7 @@ import logging
 from . import irc_constants
 from . import bot_message
 
-__reload__ = [bot_message, irc_constants]
+__reload__ = [irc_constants, bot_message]
 
 
 class Window:
