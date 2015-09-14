@@ -17,6 +17,12 @@
      * Requires serializing all class instances. Only the sockets need to stay.
      * When all the classes are reloaded, they should be re-initialized 
 
+## New Features
+ * Multi-server support
+ * Rebooting of bot(s) without losing connection
+ * Integrated HTTP server (for sending logs etc)
+ * Remotely updating the bot from the github repository
+
 
 ## Architecture
 
