@@ -877,7 +877,7 @@ class IRCClient:
             "last_ping_time": self.last_ping_time,
             "last_pong_time": self.last_pong_time,
             "ping_after": self.ping_after,
-            "last_client_ping_time": self.last_client_ping_time,
+            "pinged_server": self.pinged_server,
             "max_inactivity": self.max_inactivity,
             "send_buffer": self.send_buffer,
             "last_send_time": self.last_send_time,
@@ -911,7 +911,7 @@ class IRCClient:
         self.last_ping_time = serialized["last_ping_time"]
         self.last_pong_time = serialized["last_pong_time"]
         self.ping_after = serialized["ping_after"]
-        self.last_client_ping_time = serialized["last_client_ping_time"]
+        self.pinged_server = serialized["pinged_server"]
         self.max_inactivity = serialized["max_inactivity"]
         self.send_buffer = serialized["send_buffer"]
         self.last_send_time = serialized["last_send_time"]
