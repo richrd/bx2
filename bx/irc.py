@@ -100,9 +100,11 @@ class IRCClient:
         # Time of last sent PONG reply
         self.last_pong_time = None
         # Minimum time of inactivity before pinging the server (to check that the connection)
-        self.ping_after = 120  # 2 minutes TODO: Implement
+        self.ping_after = 120  # 2 minutes
+        # Last time we've pinged the server (resets after the pong response)
+        self.pinged_server = False
         # Time of the last PING by the client
-        self.last_client_ping_time = None
+        #self.last_client_ping_time = None
         # Maximum time of inactivity before reconnecting to the server
         self.max_inactivity = 180  # 3 minutes TODO: Implement
 
@@ -190,6 +192,8 @@ class IRCClient:
     def disconnect(self):
         self.irc_connected = 0
         self.irc_running = 0
+        self.socket.close()
+        self.on_disconnect()
 
     def mainloop(self):
         while self.irc_connected:
@@ -238,6 +242,24 @@ class IRCClient:
             self.debug_log("mainloop()", "socket inaccessible")
         self.process()
         return True
+
+    def keep_alive(self):
+        if self.last_receive_time is not None:
+            elapsed = time.time() - self.last_receive_time
+        else:
+            return
+        # Ping the server after inactivity and wait for reply.
+        # If no timely response is received, cut the connection and reconnect.
+        if elapsed > self.max_inactivity:
+            self.debug_log("KeepAlive()", "server not responding to ping, reconnecting.")
+            self.on_connection_timeout()
+            self.disconnect()
+        elif (not self.pinged_server) and elapsed > self.ping_after:
+            self.ping_server()
+
+    def ping_server(self):
+        self.send("PING " + self.current_nick)
+        self.pinged_server = time.time()
 
     #
     # IRC Actions
@@ -355,6 +377,7 @@ class IRCClient:
     def on_pong(self):
         """Callend when a PONG event is received."""
         self._dispatch_event()
+        self.pinged_server = False
 
     def on_motd(self, data=""):
         """Called for each line in the MOTD (Message Of The Day)"""
@@ -578,6 +601,7 @@ class IRCClient:
             # except:
                 # self.debug_log("send_all_to_socket errored")
                 # return False
+        return False
 
     def process_receive_buffer(self):
         if self.recv_buffer != []:

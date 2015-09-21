@@ -10,7 +10,7 @@ import copy
 import logging
 
 
-from . import bot
+from . import bot_main
 from .config import Config
 from .logger import LoggingHandler
 
@@ -81,7 +81,7 @@ class App:
 
     def create_bot(self, name, config):
         """Create a single bot with a name and config."""
-        irc_bot = bot.Bot(self, name, config)
+        irc_bot = bot_main.Bot(self, name, config)
         irc_bot.init()
         self.bots[name] = irc_bot
         return irc_bot
@@ -93,14 +93,15 @@ class App:
     def mainloop(self):
         """Run mainloops for all bots."""
         while self.running:
-            [bot.mainloop() for bot in self.bots.values()]
+            for bot in self.bots.values():
+                bot.mainloop()
             time.sleep(0.01)
 
     def reboot(self):
         """Stores a snapshot of all bots, shuts down them down and reloads them with the snapshots."""
         self.logger.debug("Rebooting bots!")
         self._serialize()
-        reload(bot)
+        reload(bot_main)
         self._unserialize()
 
     def _serialize(self):
@@ -119,7 +120,7 @@ class App:
     def _unserialize_bot(self, bot_name):
         """Unserialize a single bot."""
         config = self.config.get_servers()[bot_name]
-        irc_bot = bot.Bot(self, bot_name, config)
+        irc_bot = bot_main.Bot(self, bot_name, config)
         irc_bot.init()
         irc_bot._unserialize(self.bot_snapshots[bot_name])
         irc_bot.setup_client()
