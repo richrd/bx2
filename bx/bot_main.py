@@ -20,6 +20,7 @@ class Bot:
         self.app = app
         self.name = name
         self.config = config
+        self.running = 0
 
         self.logger = logging.getLogger(__name__)
         self.irc = irc.IRCClient()
@@ -55,10 +56,12 @@ class Bot:
         self.setup_events()
 
     def start(self):
+        self.running = 1
         self.irc.connect()
 
     def stop(self):
-        pass
+        self.running = 0
+        self.irc.disconnect()
 
     def mainloop(self):
         if self.irc.is_running():
@@ -76,7 +79,6 @@ class Bot:
 
     def on_irc_event(self, name, args):
         """Receive and handle an event from the IRC client."""
-        self.logger.debug("self.event_handlers: {}".format(self.event_handlers))
         evt = bot_event.Event(self)
         evt._parse_from_irc_event(name, args)
         self.handle_event(evt)
@@ -90,19 +92,26 @@ class Bot:
 
         Many events are handled by windows, so we don't have to do everything here.
         """
-        if event.name == "on_irc_ready":
+        if event.name == "on_disconnect":
+            if self.running:
+                # TODO: reconnect
+                pass
+        elif event.name == "on_irc_ready":
             self.auto_join()
-        if event.name in ["on_parse_nick_hostname", "on_whois_hostname"]:
+        elif event.name in ["on_parse_nick_hostname", "on_whois_hostname"]:
             user = self.get_user(event.irc_args["nick"])
             if not user:
                 user = self.create_user(event.irc_args["nick"])
             user.set_hostname(event.irc_args["hostname"])
-        if event.name == "on_nick_changed":
+        elif event.name == "on_nick_changed":
             user = self.get_user(event.irc_args["nick"])
             if user:
                 user.set_nick(event.irc_args["new_nick"])
             else:
-                self.logger.warning("Unknown user '{}' is now '{}'".format(event.irc_args["nick"], event.irc_args["new_nick"]))
+                self.logger.warning("Unknown user '{}' is now '{}'".format(
+                    event.irc_args["nick"],
+                    event.irc_args["new_nick"])
+                )
         if event.name == "on_nick_changed":
             user = self.get_user(event.irc_args["nick"])
             if user:
