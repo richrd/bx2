@@ -23,6 +23,95 @@
  * Integrated HTTP server (for sending logs etc)
  * Remotely updating the bot from the github repository
 
+## Modules to implement (the core modules, others might be added too)
+
+* addaccount
+> Add a new bot account.
+
+* alias
+> Add an alias for a command.
+
+* auth
+> Log in to the bot with an existing username and password.
+
+* autochanmode
+> Maintain channel modes (modes are defined in server channel config).
+
+* autoop
+> Automatically op trusted users (**How to define user and channel to auto op?**).
+
+* autorejoin
+> Automatically rejoin a channel after kick.
+
+* broadcast
+> Broadcast messages or command output to channels and/or users (targets) at a defined interval.
+
+* calc
+> Calculator: calculate basic math and show result.
+
+* clearlogs
+> Clear logs in a window. Clear all by default or clear messages since a time or duration.
+
+* commands
+> List the commands that the user has access to.
+
+* deauth
+> Log out of the bot.
+
+* dropsend
+> Clear the remaining send message queue (data queued for sending to the server).
+
+* help
+> Bot help command.
+
+* highlight
+> Highlight everyone on current channel.
+
+* join
+> Make the bot join a channel (or rejoin the current channel).
+
+* level
+> Show the permission level of the asking user (or a specified user).
+
+* logs
+> Get channel logs. Allows asking for specific channel (if sufficient privileges) and send logs as a HTTP link.
+
+* msg
+> Make the bot send a message to a user or channel
+
+* msgcount
+> Show log size for window.
+
+* newpass
+> Change user password.
+
+* nick
+> Change bot nick.
+
+* part
+> Make the bot leave the current channel (or a specified channel).
+
+* ping
+> ping the bot to see if it's alive
+
+* raw
+> Send raw data to IRC server.
+
+* reconnect
+> Reconnect to an irc server.
+
+* run
+> Run a command as a specifi user on a channel in a certain IRC network.
+
+* topic
+> Change channel topic.
+
+* trustme
+> Associate a user hostname with their account.
+
+* url
+> Show url titles.
+
 
 ## Architecture
 
@@ -38,6 +127,29 @@ It's a bit crude with the parsing, but it works well. The new version also emits
  * Window
      * Channel
      * Query
+ * Plugin
+
+#### Plugins
+
+Plugins are python files that implement the required minumum API.
+Each file must implement a Plugin subclass that implements the required features.
+Plugins respond to their names as a commands, or any events they subscribe to.
+
+**Each plugin needs to declare the following:**
+
+ * **name**
+     > The unique name of the plugin. If the plugin can be executed as a command, this is the command name that runs it.
+     > *Maybe add an override so that another name can be used for running the command?*
+
+ * **permission_level** (optional, default: 0)
+     > The default permission level for using the plugin
+
+ * **zones** (optional, default: ZONE_ALL)
+     > Where the plugin can be used. Either ZONE_CHANNEL, ZONE_QUERY or ZONE_ALL
+
+ * **throttle*** (optional, default: ZONE_ALL)
+     > How often the plugin can be run (interval in seconds)
+
 
 ### Config (global config and defaults)
  * server (used as defaults for all servers, can be overriden in a server config file)
