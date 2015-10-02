@@ -22,7 +22,10 @@ class Bot:
         self.config = config
         self.running = 0
 
-        self.logger = logging.getLogger(__name__)
+        # Setup our logger with module and network name
+        self.logger = logging.getLogger("{}[{}]".format(__name__, self.name))
+
+        # Create IRC client
         self.irc = irc.IRCClient()
 
         # Event handlers (callbacks that are called with each event that occurs)
@@ -117,7 +120,9 @@ class Bot:
             if user:
                 user.set_nick(event.irc_args["new_nick"])
             else:
-                self.logger.warning("Unknown user '{}' is now '{}'".format(event.irc_args["nick"], event.irc_args["new_nick"]))
+                self.logger.warning("Unknown user '{}' is now '{}'".format(
+                    event.irc_args["nick"], event.irc_args["new_nick"])
+                )
         self.trigger_event_handlers(event)
         self.handle_debugging_event(event)
         self.log_current_status()
