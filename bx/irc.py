@@ -101,12 +101,14 @@ class IRCClient:
         self.last_pong_time = None
         # Minimum time of inactivity before pinging the server (to check that the connection)
         self.ping_after = 120  # 2 minutes
+        self.ping_after = 20  # 2 minutes
         # Last time we've pinged the server (resets after the pong response)
         self.pinged_server = False
         # Time of the last PING by the client
         #self.last_client_ping_time = None
         # Maximum time of inactivity before reconnecting to the server
         self.max_inactivity = 180  # 3 minutes TODO: Implement
+        self.max_inactivity = 40  # 3 minutes TODO: Implement
 
         # Lines waiting to be sent to the IRC server
         self.send_buffer = []
@@ -254,11 +256,15 @@ class IRCClient:
             self.debug_log("KeepAlive()", "server not responding to ping, reconnecting.")
             self.on_connection_timeout()
             self.disconnect()
+            return
         elif (not self.pinged_server) and elapsed > self.ping_after:
+        # elif elapsed > self.ping_after:
+        # elif (time.time() - self.pinged_server) > self.ping_after:
             self.ping_server()
 
     def ping_server(self):
         self.send("PING " + self.current_nick)
+        # self.last_client_ping = time.time()
         self.pinged_server = time.time()
 
     #
@@ -367,6 +373,11 @@ class IRCClient:
     def on_connect_throttled(self, reason=""):
         """Called when the server has throttled a connection attempt."""
         self.debug_log("Connection was throttled because:", reason)
+        self._dispatch_event()
+
+    def on_connection_timeout(self):
+        """Called when the server connecting isn't respondig."""
+        self.debug_log("Connection timed out.")
         self._dispatch_event()
 
     def on_ping(self, data):
@@ -540,6 +551,7 @@ class IRCClient:
         for line in lines:
             line = line.rstrip()
             self.recv_buffer.append(line)
+            self.pinged_server = False  # Reset ping status
             self.on_receive(line)
         self.last_receive_time = time.time()
         return True
@@ -568,7 +580,7 @@ class IRCClient:
     def process(self):
         try:
             self.process_receive_buffer()
-            # self.keep_alive()
+            self.keep_alive()
         except Exception as e:
             print(traceback.format_exc())
             print(sys.exc_info()[0])

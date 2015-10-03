@@ -166,6 +166,7 @@ class Bot:
                 event.window.privmsg(result)
 
     def log_current_status(self):
+        return
         self.logger.debug("self.windows: {}".format(self.windows))
         self.logger.debug("self.users: {}".format(self.users))
 

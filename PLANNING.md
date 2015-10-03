@@ -4,14 +4,14 @@
  * No setup.py
  * Single server only
  * Unclear API
-     * Kludgy event system
+ * Kludgy event system
  * Kludgy config
  * Custom logging system
      * Bloated command line logging
-     * Use logging library instead?
+     * Should use logging library instead?
  * Unreliable 'bookkeeping' (tracking users, channels and the bot nick)
  * User privileges are global (No channel specific permissions)
- * IRC lib only has multiple callback events (Can't listen to all events via one callback)
+ * Custom IRC lib only has multiple callback events (Can't listen to all events via one callback)
  * Only config and modules can be reloaded, but not the core
      * Would be nice to be able to reload core classes
      * Requires serializing all class instances. Only the sockets need to stay.
@@ -23,7 +23,9 @@
  * Integrated HTTP server (for sending logs etc)
  * Remotely updating the bot from the github repository
 
-## Modules to implement (the core modules, others might be added too)
+## Plugins
+
+### Core Plugins
 
 * addaccount
 > Add a new bot account.
@@ -47,7 +49,7 @@
 > Broadcast messages or command output to channels and/or users (targets) at a defined interval.
 
 * calc
-> Calculator: calculate basic math and show result.
+> Calculator: calculate basic math and show result. (Use https://github.com/danthedeckie/simpleeval/)
 
 * clearlogs
 > Clear logs in a window. Clear all by default or clear messages since a time or duration.
@@ -111,6 +113,18 @@
 
 * url
 > Show url titles.
+
+### Extra Plugins
+
+* broadcast
+> Broadcast a message or command output to a target on a specific interval.
+
+* tell
+> Queue a message to a user for sending when they come online.
+
+* weather
+> Show weather for different locations.
+
 
 
 ## Architecture

@@ -88,7 +88,9 @@ class App:
 
     def start_bots(self):
         """Start all bots."""
-        [bot.start() for bot in self.bots.values()]
+        for bot in self.bots.values():
+            if bot.config["enabled"]:
+                bot.start()
 
     def mainloop(self):
         """Run mainloops for all bots."""
