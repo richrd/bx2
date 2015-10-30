@@ -122,9 +122,11 @@
 * tell
 > Queue a message to a user for sending when they come online.
 
+* vote
+> Voting feature.
+
 * weather
 > Show weather for different locations.
-
 
 
 ## Architecture
@@ -134,14 +136,16 @@ We're using a custom IRC Client library to limit external dependencies (also for
 It's a bit crude with the parsing, but it works well. The new version also emits events instead of relying on callbacks.
 
 ### Classes
- * IRCClient
- * Event
- * User
- * Message
- * Window
-     * Channel
-     * Query
- * Plugin
+ * App
+     * Bot
+         * IRCClient
+         * Event
+         * User
+         * Message
+         * Window
+             * Channel
+             * Query
+         * Plugin
 
 #### Plugins
 
@@ -182,6 +186,7 @@ Plugins respond to their names as a commands, or any events they subscribe to.
 All keys in default server configuration can be overriden. Only the non overridable keys are shown here.
 
  * server
+     * enabled (whether the server is used or ignored)
      * name (server identifier)
      * host
      * port
@@ -194,6 +199,8 @@ All keys in default server configuration can be overriden. Only the non overrida
      * name (account user name)
      * level (account permission level)
      * servers (servers where the account can be used. corresponds to server name)
-         * server
+         * server_name
      * hostnames (hostnames that are trusted and used for automatic authentication)
          * hostname
+
+

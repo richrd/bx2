@@ -37,6 +37,9 @@ class Config:
         self.load_servers()
         self.load_accounts()
 
+    def get_item(self, key):
+        return self.config[key]
+
     def get_servers(self):
         return self.servers
 
