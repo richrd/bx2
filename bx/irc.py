@@ -26,6 +26,8 @@ class IRCClient:
         # Logging
         self.logger = logging.getLogger(__name__)
 
+        self.debug = 1
+
         # Server details
         self.host = host
         self.port = port
@@ -60,10 +62,6 @@ class IRCClient:
 
         # Event handlers (callbacks called with events)
         self.event_handlers = []
-
-        # TODO: Remove after debugging is complete
-        self.all_events = [name for name in dir(self) if name[:3] == "on_"]
-        self.used_events = []
 
         # Flag indicating if the client has been initialized
         self.inited = False
@@ -100,15 +98,11 @@ class IRCClient:
         # Time of last sent PONG reply
         self.last_pong_time = None
         # Minimum time of inactivity before pinging the server (to check that the connection)
-        self.ping_after = 120  # 2 minutes
-        self.ping_after = 20  # 2 minutes
+        self.ping_after = 90  # 1.5 minutes
         # Last time we've pinged the server (resets after the pong response)
         self.pinged_server = False
-        # Time of the last PING by the client
-        #self.last_client_ping_time = None
         # Maximum time of inactivity before reconnecting to the server
-        self.max_inactivity = 180  # 3 minutes TODO: Implement
-        self.max_inactivity = 40  # 3 minutes TODO: Implement
+        self.max_inactivity = 180  # 3 minutes (NOTE: must be greater than 'self.ping_after'!)
 
         # Lines waiting to be sent to the IRC server
         self.send_buffer = []
@@ -122,6 +116,7 @@ class IRCClient:
         self.inited = True
 
     def debug_log(self, *args):
+        if not self.debug: return False
         msg = " ".join(map(str, args))
         print("IRC DEBUG:" + msg)
 
@@ -186,6 +181,8 @@ class IRCClient:
         try:
             self.socket.connect((self.host, self.port))
         except socket.error as err:
+            # FIXME: no fallback when this occurs, bot stays offline in infinite loop
+            # Simulate by just returning False before the try/except
             self.debug_log("Error connecting:", str(socket.error), str(err))
             return False
         self.on_connected()
@@ -206,7 +203,7 @@ class IRCClient:
                 return False
 
     def send(self, data):
-        self.debug_log("send:", data)
+        # self.debug_log("send:", data)
         if len(data) > 510:
             self.debug_log("send(): data too long!")
         data += "\r\n"
@@ -258,13 +255,10 @@ class IRCClient:
             self.disconnect()
             return
         elif (not self.pinged_server) and elapsed > self.ping_after:
-        # elif elapsed > self.ping_after:
-        # elif (time.time() - self.pinged_server) > self.ping_after:
             self.ping_server()
 
     def ping_server(self):
         self.send("PING " + self.current_nick)
-        # self.last_client_ping = time.time()
         self.pinged_server = time.time()
 
     #
@@ -349,13 +343,13 @@ class IRCClient:
 
     def on_connected(self):
         """Called when the client has connected to the server."""
-        self._dispatch_event()
         self.irc_connected = True
+        self._dispatch_event()
         self.introduce()
 
     def on_disconnect(self):
+        self.irc_connected = False
         self._dispatch_event()
-        self.irc_connected = 0
 
     def on_irc_ready(self):
         self._dispatch_event()
@@ -488,9 +482,6 @@ class IRCClient:
     def on_event(self, name, args):
         """Called for each event that occurs, with event name and arguments."""
         self.debug_log("EVT:", name, args)
-        # TODO: DEBUG
-        if name not in self.used_events:
-            self.used_events.append(name)
         for handler in self.event_handlers:
             handler(name, args)
 
@@ -976,10 +967,3 @@ def run(mode=None):
 if __name__ == "__main__":
     # Run the IRC client test
     irc = run("custom")
-    unused_events = [name for name in irc.all_events if name not in irc.used_events]
-    # TESTED: on_connected, on_receive, on_ping, on_server_info, on_end_motd, on_irc_ready, on_my_modes_changed, on_i_joined, on_channel_topic_is, on_channel_topic_meta, on_channel_has_users, on_privmsg, on_channel_topic_changed, on_channel_user_modes_changed, on_channel_kick
-    print("")
-    print("USED EVENTS:")
-    print(irc.used_events)
-    print("UNUSED EVENTS:")
-    print(unused_events)
