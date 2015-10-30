@@ -14,6 +14,8 @@ from . import bot_main
 from .config import Config
 from .logger import LoggingHandler
 
+from .lib import pyco_http
+
 __version__ = "0.0.1"
 
 
@@ -33,6 +35,7 @@ class App:
         self.debugging = 1
         self.running = 0
         self.app_path = os.path.dirname(os.path.realpath(__file__))
+        self.init_time = time.time()
 
         # Initialize logging
         logging.basicConfig(level=logging.NOTSET)
@@ -48,6 +51,10 @@ class App:
         self.config = Config(self)
         self.bots = {}
 
+        # HTTP Server
+        self.http_server = pyco_http.PycoHTTP()
+        self.http_server.set_default_header("content-type", "text/plain")
+
         # Stores serialized bots that have been stopped. Used when 'rebooting' the bots.
         # The only thing that is NOT serialized is the IRCClient instances.
         self.bot_snapshots = {}
@@ -59,6 +66,8 @@ class App:
             self.logger.error("Failed to initialize configuration.")
             return False
         self.config.load()
+        self.http_server.set_port(self.config.get_item("http")["port"])
+        self.http_server.set_handler(self.handle_http_request)
         return True
 
     def run(self):
@@ -69,6 +78,7 @@ class App:
         self.running = 1
         self.create_bots()
         self.start_bots()
+        self.http_server.start()
         self.mainloop()
 
     def create_bots(self):
@@ -97,6 +107,7 @@ class App:
         while self.running:
             for bot in self.bots.values():
                 bot.mainloop()
+            self.http_server.serve()
             time.sleep(0.01)
 
     def reboot(self):
@@ -105,6 +116,27 @@ class App:
         self._serialize()
         reload(bot_main)
         self._unserialize()
+
+    def handle_http_request(self, request):
+        path = request.parsed_url.path
+        if path[0] == "/":
+            path = path[1:]
+        parts = path.split("/")
+        if parts[0] in self.bots.keys():
+            server = parts.pop(0)
+            return self.bots[server].handle_http_request(request, parts)
+        else:
+            m, s = divmod(time.time()-self.init_time, 60)
+            h, m = divmod(m, 60)
+            run_time = "%d:%02d:%02d" % (h, m, s)
+            data = "BX\n"
+            data += "RUN TIME:{}\n".format(run_time)
+            data += "BOTS:{}\n".format(self.bots.keys())
+            response = {
+                "data": data
+            }
+
+        return response
 
     def _serialize(self):
         """Serialize all bots."""
