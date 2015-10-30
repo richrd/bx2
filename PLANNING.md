@@ -20,7 +20,7 @@
 ## New Features
  * Multi-server support
  * Rebooting of bot(s) without losing connection
- * Integrated HTTP server (for sending logs etc)
+ * Integrated HTTP server (for sending logs, providing API etc)
  * Remotely updating the bot from the github repository
 
 ## Plugins
@@ -137,6 +137,8 @@ It's a bit crude with the parsing, but it works well. The new version also emits
 
 ### Classes
  * App
+     * HTTPServer
+         * PycoHTTP
      * Bot
          * IRCClient
          * Event
@@ -147,26 +149,26 @@ It's a bit crude with the parsing, but it works well. The new version also emits
              * Query
          * Plugin
 
-#### Plugins
+#### Modules
 
-Plugins are python files that implement the required minumum API.
+Modules are python files that implement the required minumum API.
 Each file must implement a Plugin subclass that implements the required features.
-Plugins respond to their names as a commands, or any events they subscribe to.
+Modules respond to their names as a commands, or any events they subscribe to.
 
-**Each plugin needs to declare the following:**
+**Each module needs to declare the following:**
 
  * **name**
-     > The unique name of the plugin. If the plugin can be executed as a command, this is the command name that runs it.
+     > The unique name of the module. If the module can be executed as a command, this is the command name that runs it.
      > *Maybe add an override so that another name can be used for running the command?*
 
  * **permission_level** (optional, default: 0)
-     > The default permission level for using the plugin
+     > The default permission level for using the module
 
  * **zones** (optional, default: ZONE_ALL)
-     > Where the plugin can be used. Either ZONE_CHANNEL, ZONE_QUERY or ZONE_ALL
+     > Where the module can be used. Either ZONE_CHANNEL, ZONE_QUERY or ZONE_ALL
 
  * **throttle*** (optional, default: ZONE_ALL)
-     > How often the plugin can be run (interval in seconds)
+     > How often the module can be run (interval in seconds)
 
 
 ### Config (global config and defaults)
@@ -202,5 +204,21 @@ All keys in default server configuration can be overriden. Only the non overrida
          * server_name
      * hostnames (hostnames that are trusted and used for automatic authentication)
          * hostname
+
+#### Permission system
+
+Basic permissions are defined by an intiger. By default it ranges from 0 to 100.
+
+**Levels:**
+
+ * 0: GUEST - Not truested at all.
+ > No special access. This is the default permission level for everyone.
+
+ * 1 - 9: AQUAINTANCE - Slightly trusted, can access some extra commands
+ > Lowest tier permissions. Might have some basic access that normal users don't have.
+
+ * 10 - 99: CURRENTLY UNDEFINED
+
+ * 100 and up: OWNER - Can do anything, and potentially run arbitrary code on the server
 
 
