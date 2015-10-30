@@ -9,5 +9,8 @@
         "cmd_throttle": 1.5,
         "send_throttle": 0.5,
         "channels": {}
+    },
+    "http": {
+        "port": 8088
     }
 }
