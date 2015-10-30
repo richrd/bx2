@@ -94,12 +94,19 @@ class Channel(Window):
         # All users on the channel
         self.users = {}
 
-    def add_user(self, user):
+    def get_users(self):
+        self.bot.logger.debug(self.users)
+        return self.users.keys()
+
+    def add_user(self, user, mode=None):
         if isinstance(user, str):
             self.logger.error("Trying to call add_user with a nick instead of a user instance!")
             return False
         if user not in self.users.keys():
-            self.users[user] = {}
+            user_data = {"modes":[]}
+            if mode:
+                user_data["modes"].append(mode)
+            self.users[user] = user_data
             return True
         self.logger.warning("Trying add existing user to channel!")
         return False
@@ -116,12 +123,18 @@ class Channel(Window):
 
     def on_event(self, event):
         Window.on_event(self, event)
-        if event.name == "on_join":
-            if event.channel == self:
+
+        # Event that requires the current channel
+        if event.window == self:
+            if event.name == "on_channel_join":
                 self.add_user(event.user)
-        elif event.name == "on_part":
-            if event.channel == self:
+            elif event.name == "on_channel_part":
                 self.remove_user(event.user)
+            elif event.name == "on_channel_has_users":
+                for user_item in event.irc_args["users"]:
+                    print("Trying to add user {} to chan.".format(user_item))
+                    user = self.bot.get_user_create(user_item[0])
+                    self.add_user(user, user_item[1])
 
     def _serialize(self):
         serialized = Window._serialize(self)
@@ -131,7 +144,9 @@ class Channel(Window):
         serialized["topic"] = self.topic
         serialized["topic_by"] = self.topic_by
         serialized["topic_time"] = self.topic_time
-        serialized["users"] = [user._serialize() for user in self.users]
+        serialized["users"] = []
+        for user in self.users:
+            serialized["users"].append([user._serialize(), self.users[user]])
         return serialized
 
     def _unserialize(self, serialized):
@@ -142,9 +157,9 @@ class Channel(Window):
         self.topic = serialized["topic"]
         self.topic_by = serialized["topic_by"]
         self.topic_time = serialized["topic_time"]
-        self.users = []
+        self.users = {}
         for user in serialized["users"]:
-            self.users.append(self.bot.get_user(user["nick"]))
+            self.users[self.bot.get_user(user[0]["nick"])] = user[1]
 
 
 class Query(Window):
@@ -153,6 +168,9 @@ class Query(Window):
         Window.__init__(self, bot, name)
         self.zone = irc_constants.ZONE_QUERY
         self.user = None
+
+    def get_users(self):
+        return [self.user]
 
     def _serialize(self):
         serialized = Window._serialize(self)
