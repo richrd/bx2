@@ -2,6 +2,8 @@
 The Bot class for handling a single IRC server.
 """
 
+import __future__
+import time
 import logging
 
 from . import irc
@@ -22,6 +24,10 @@ class Bot:
         self.config = config
         self.running = 0
 
+        self.default_reconnect_wait = 5
+        self.reconnect_wait = 5
+        self.reconnect_wait_increase = 30
+
         # Setup our logger with module and network name
         self.logger = logging.getLogger("{}[{}]".format(__name__, self.name))
 
@@ -33,10 +39,14 @@ class Bot:
 
         # Users
         self.users = []
+
         # Windows for channels and queries
         self.windows = []
 
-        # Force reload
+        # Modules
+        self.modules = {}
+
+        # Force reload TODO: disable when ready for production
         self.reboot_identifier = "forcebootbx"
 
     def _init(self):
@@ -60,11 +70,19 @@ class Bot:
 
     def start(self):
         self.running = 1
-        self.irc.connect()
+        if not self.irc.connect():
+            return False
 
     def stop(self):
         self.running = 0
         self.irc.disconnect()
+
+    def reconnect(self):
+        # TODO: Keep mainloop running and reconnect on a flag. (Allow HTTP to run etc).
+        self.logger.debug("Reconnecting in {} seconds...".format(self.reconnect_wait))
+        time.sleep(self.reconnect_wait)
+        self.logger.debug("Reconnecting...")
+        self.irc.connect()
 
     def mainloop(self):
         if self.irc.is_running():
@@ -86,6 +104,17 @@ class Bot:
         evt._parse_from_irc_event(name, args)
         self.handle_event(evt)
 
+    def on_connected(self):
+        pass
+
+    def on_irc_ready(self):
+        self.reconnect_wait = self.default_reconnect_wait  # Reset the reconnect time after successfull connect
+        self.auto_join()
+
+    def on_connect_throttled(self):
+        self.logger.debug("CONNECTION THROTTLED, ADDING TIME!")
+        self.reconnect_wait += self.reconnect_wait_increase
+
     def create_message_from_event(self, event):
         msg = bot_message.Message(event.irc_args["nick"], event.irc_args["data"], event.irc_args["target"])
         return msg
@@ -95,12 +124,15 @@ class Bot:
 
         Many events are handled by windows, so we don't have to do everything here.
         """
-        if event.name == "on_disconnect":
-            if self.running:
-                # TODO: reconnect
-                pass
+        if event.name == "on_connected":
+            self.on_connected()
+        elif event.name == "on_disconnect":
+            if self.running and self.config["enabled"]:
+                self.reconnect()
+        elif event.name == "on_connect_throttled":
+            self.on_connect_throttled()
         elif event.name == "on_irc_ready":
-            self.auto_join()
+            self.on_irc_ready()
         elif event.name in ["on_parse_nick_hostname", "on_whois_hostname"]:
             user = self.get_user(event.irc_args["nick"])
             if not user:
@@ -149,10 +181,11 @@ class Bot:
             cmd = cmd[1:]
 
         if len(parts) == 1:
-            pass
             if cmd == "reboot":
                 self.logger.debug("Trying to reboot bots!")
                 self.app.reboot()
+            if cmd == "disco":
+                self.irc.disconnect()
         else:
             if cmd in ["exec", "eval"]:
                 operation = eval
@@ -164,6 +197,18 @@ class Bot:
                 except:
                     pass
                 event.window.privmsg(result)
+
+    def handle_http_request(self, request, path):
+        window_names = [win.get_name() for win in self.windows]
+        data = "BOT:{}\n".format(self.name)
+        data += "WINDOWS:{}\n".format(window_names)
+        for win_name in window_names:
+            data += win_name+"\n"
+            win_users = self.get_window(win_name).get_users()
+            data += "RAW_USERS:{}\n".format(win_users)
+            data += str(win_users) + "\n"
+        response = {"data": data}
+        return response
 
     def log_current_status(self):
         return
@@ -204,6 +249,13 @@ class Bot:
             if user.get_nick() == nick:
                 return user
         return False
+
+    def get_user_create(self, nick):
+        """Get a user instance and create it if it doesn't exist."""
+        user = self.get_user(nick)
+        if not user:
+            user = self.create_user(nick)
+        return user
 
     def get_window(self, name):
         for window in self.windows:
