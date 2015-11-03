@@ -39,12 +39,13 @@ class PycoHTTP:
         self.eol = "\r\n"
         self.max_queued_conns = 5
         self.max_request_len = 2048  # 2kb max request size
-        self.select_timeout = 0.1
-        self.socket_timeout = 0.1
+        self.select_timeout = 0.001
+        self.socket_timeout = 0.05
         self.headers = {
-            "Content-Type": "text/html",
             "Server": "PycoHTTP",
             "Connection": "close",
+            "Content-Type": "text/html",
+            "Content-Encoding": "utf-8",
         }
         self.request_handler = None
 
