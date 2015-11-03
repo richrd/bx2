@@ -29,7 +29,6 @@ class Window:
         return "[{}]".format(self.get_name())
 
     def get_name(self):
-        # FIXME: Return correct name for channels AND queries
         if self.zone == irc_constants.ZONE_QUERY:
             return self.user.get_nick()
         return self.name
@@ -49,6 +48,9 @@ class Window:
     #
     # IRC Actions
     #
+
+    def send(self, msg):
+        self.privmsg(msg)
 
     def privmsg(self, msg):
         self.bot.irc.privmsg(self.get_name(), msg)
@@ -94,8 +96,10 @@ class Channel(Window):
         # All users on the channel
         self.users = {}
 
+    def has_user(self, user):
+        return user in self.users.keys()
+
     def get_users(self):
-        self.bot.logger.debug(self.users)
         return self.users.keys()
 
     def add_user(self, user, mode=None):
@@ -103,7 +107,7 @@ class Channel(Window):
             self.logger.error("Trying to call add_user with a nick instead of a user instance!")
             return False
         if user not in self.users.keys():
-            user_data = {"modes":[]}
+            user_data = {"modes": []}
             if mode:
                 user_data["modes"].append(mode)
             self.users[user] = user_data
@@ -115,26 +119,40 @@ class Channel(Window):
         if isinstance(user, str):
             self.logger.error("Trying to call remove_user with a nick instead of a user instance!")
             return False
-        if user in self.users.keys():
+        if self.has_user(user):
             del self.users[user]
             return True
         self.logger.warning("Trying to remove non-existing user from channel!")
         return False
 
+    def clear_users(self):
+        self.users = {}
+
     def on_event(self, event):
         Window.on_event(self, event)
-
+        if event.name == "on_quit":
+            self.remove_user(event.user)
+        if event.name == "on_disconnect":
+            # Clear all users on disconnect (cant do bookkeeping)
+            self.clear_users()
         # Event that requires the current channel
         if event.window == self:
             if event.name == "on_channel_join":
                 self.add_user(event.user)
             elif event.name == "on_channel_part":
                 self.remove_user(event.user)
+            elif event.name == "on_channel_kick":
+                self.remove_user(event.user)
             elif event.name == "on_channel_has_users":
+                # Clear all users since this event declares them
+                self.clear_users()
                 for user_item in event.irc_args["users"]:
-                    print("Trying to add user {} to chan.".format(user_item))
                     user = self.bot.get_user_create(user_item[0])
                     self.add_user(user, user_item[1])
+            elif event.name == "on_channel_topic_is":
+                self.topic = event.data
+            elif event.name == "on_channel_topic_changed":
+                self.topic = event.data
 
     def _serialize(self):
         serialized = Window._serialize(self)
@@ -164,21 +182,24 @@ class Channel(Window):
 
 class Query(Window):
     """Window representing an IRC query (one to one chat)."""
-    def __init__(self, bot, name=None):
+    def __init__(self, bot, name):
         Window.__init__(self, bot, name)
         self.zone = irc_constants.ZONE_QUERY
-        self.user = None
+        self.user = self.bot.get_user(name)
 
     def get_users(self):
         return [self.user]
 
+    def notice(self, msg):
+        self.bot.irc.notice(self.get_name(), msg)
+
     def _serialize(self):
         serialized = Window._serialize(self)
         serialized["zone"] = self.zone
-        serialized["user"] = self.user
+        serialized["nick"] = self.user.get_nick()
         return serialized
 
     def _unserialize(self, serialized):
         Window._unserialize(self, serialized)
         self.zone = serialized["zone"]
-        self.user = self.bot.get_user(serialized["user"]["nick"])
+        self.user = self.bot.get_user(serialized["nick"])
