@@ -30,14 +30,19 @@ class User:
         self.bot.add_event_handler(self.on_event)
 
     def __repr__(self):
-        return "<{} / {}>".format(self.nick, self.hostname)
+        return "<{}>".format(self.nick)
 
     def __str__(self):
-        return "<{} / {}>".format(self.nick, self.hostname)
+        return "<{}>".format(self.nick)
 
     #
     # Getters
     #
+
+    def is_authed(self):
+        if self.account:
+            return True
+        return False
 
     def get_nick(self):
         return self.nick
@@ -66,6 +71,11 @@ class User:
     def get_last_command(self):
         return self.last_command
 
+    def get_permission_level(self):
+        if not self.account:
+            return 0
+        return self.account.get_permission_level()
+
     #
     # Setters
     #
@@ -81,6 +91,7 @@ class User:
 
     def set_online(self, online):
         self.online = online
+        self.on_online()
 
     def set_first_seen_time(self, first_seen_time):
         self.first_seen_time = first_seen_time
@@ -101,20 +112,55 @@ class User:
     # Events
     #
 
+    def on_online(self):
+        pass
+
     def on_action(self):
+        if not self.get_online():
+            self.set_online(1)
         self.last_active = time.time()
 
     def on_event(self, event):
         if event.user != self:
-            # All events that don't have a user
+            # Skip all events that aren't this user
             return False
-        self.on_action()
-        if event.name:
-            pass
+
+        if event.name == "on_quit":
+            self.set_online(0)
+            self.set_quit_time(time.time())
+        else:
+            self.on_action()
 
     #
     # Actions
     #
+
+    def authenticate(self, username, password):
+        account = self.bot.app.config.authenticate_account(username, password)
+        if account:
+            self.account = account
+        return account
+
+    def auto_authenticate(self):
+        account = self.bot.app.config.get_account_by_hostname(self.get_hostname())
+        if account:
+            self.account = account
+        return account
+
+    def deauthenticate(self):
+        if self.is_authed():
+            self.account = None
+            return True
+        return False
+
+    def auto_authenticate(self):
+        account = self.bot.app.config.get_account_by_hostname(self.get_hostname())
+        if account:
+            self.account = account
+        return account
+
+    def send(self, msg):
+        self.privmsg(msg)
 
     def privmsg(self, msg):
         self.bot.irc.privmsg(self.get_nick(), msg)
