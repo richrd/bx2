@@ -18,10 +18,10 @@
      * When all the classes are reloaded, they should be re-initialized 
 
 ## New Features
- * Multi-server support
- * Rebooting of bot(s) without losing connection
- * Integrated HTTP server (for sending logs, providing API etc)
- * Remotely updating the bot from the github repository
+ * [X] Multi-server support
+ * [X] Rebooting of bot(s) without losing connection
+ * [X] Integrated HTTP server (for sending logs, providing API etc)
+ * [ ] Remotely updating the bot from the github repository
 
 ## Plugins
 
@@ -147,27 +147,55 @@ It's a bit crude with the parsing, but it works well. The new version also emits
          * Window
              * Channel
              * Query
-         * Plugin
+             * self.log of channel activity (for logs etc)
+         * Module
 
-#### Modules
+### Bookkeeping
+
+* [ ] Bot
+    * [X] Own nick
+    * [ ] What channels are really joined (check kick & ban etc)
+
+* [ ] User status (online/authed/last_action etc).
+    * [ ] online
+        * [ ] User must be set to online when:
+            * [ ] They are seen
+            * [ ] They perform an action
+        * [X] User must be set offline when:
+            * [X] They quit
+            * [X] The bot gets disconnected (no chance of bookkeeping when not connected)
+    * [ ] authed
+        * [ ] The user should be deauthed when they go offline
+        * [ ] When the bot disconnects
+        * [ ] The user should be authed when their hostname
+
+* [ ] Window status
+    * [ ] Users
+        * [ ] All users in a window must be cleared when:
+            * [ ] The bot parts that channel
+            * [ ] When the bot gets disconnected
+        * [ ] Modes
+    * [ ] Channel modes
+
+### Modules
 
 Modules are python files that implement the required minumum API.
-Each file must implement a Plugin subclass that implements the required features.
+Each file must implement a Module subclass that implements the required features.
 Modules respond to their names as a commands, or any events they subscribe to.
 
-**Each module needs to declare the following:**
+**Each module can optionally declare the following:**
 
- * **name**
+ * **name** (the filename without '.py' is automatically the module name)
      > The unique name of the module. If the module can be executed as a command, this is the command name that runs it.
      > *Maybe add an override so that another name can be used for running the command?*
 
  * **permission_level** (optional, default: 0)
-     > The default permission level for using the module
+     > The permission level for using the module. By default 0 (available to anyone)
 
  * **zones** (optional, default: ZONE_ALL)
      > Where the module can be used. Either ZONE_CHANNEL, ZONE_QUERY or ZONE_ALL
 
- * **throttle*** (optional, default: ZONE_ALL)
+ * **throttle*** (optional, default: 1.5)
      > How often the module can be run (interval in seconds)
 
 
@@ -183,7 +211,7 @@ Modules respond to their names as a commands, or any events they subscribe to.
      * cmd_throttle
  * module_aliases
 
-#### Server config
+### Server config
 
 All keys in default server configuration can be overriden. Only the non overridable keys are shown here.
 
@@ -196,16 +224,18 @@ All keys in default server configuration can be overriden. Only the non overrida
          * channel
              * modes
 
-#### Account config
+### Account config
  * account
      * name (account user name)
+     * password (sha224 or md5 hexdigest)
      * level (account permission level)
      * servers (servers where the account can be used. corresponds to server name)
          * server_name
      * hostnames (hostnames that are trusted and used for automatic authentication)
          * hostname
+     * enabled True/False ???
 
-#### Permission system
+### Permission system
 
 Basic permissions are defined by an intiger. By default it ranges from 0 to 100.
 
@@ -214,10 +244,13 @@ Basic permissions are defined by an intiger. By default it ranges from 0 to 100.
  * 0: GUEST - Not truested at all.
  > No special access. This is the default permission level for everyone.
 
- * 1 - 9: AQUAINTANCE - Slightly trusted, can access some extra commands
+ * 1 - 9: AQUAINTANCE - Slightly trusted.
  > Lowest tier permissions. Might have some basic access that normal users don't have.
 
- * 10 - 99: CURRENTLY UNDEFINED
+ * 10 - 19: FRIEND - Trusted.
+ > Can use features such as auto op, getting logs on certain channels etc.
+
+ * 20 - 99: CURRENTLY UNDEFINED
 
  * 100 and up: OWNER - Can do anything, and potentially run arbitrary code on the server
 
