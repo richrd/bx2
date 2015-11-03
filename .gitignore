@@ -54,3 +54,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Ignore BX config
+bx/config/accounts
