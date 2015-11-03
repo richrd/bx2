@@ -2,13 +2,14 @@
 import os
 import sys
 import imp
-
+import logging
 import traceback
 
 
 class ModuleLoader:
     def __init__(self):
         self.module_path = ""
+        self.logger = logging.getLogger("{}".format(__name__))
 
     def set_module_path(self, path):
         self.module_path = path
@@ -33,18 +34,20 @@ class ModuleLoader:
         path = os.path.join(self.module_path, name + ".py")
         try:
             module = imp.load_source(name, path)
-            if "module_class" not in dir(mod):
-                self.logger.warning("Module '{}' didn't specify a class!".format(name))
+            if "module_class" not in dir(module):
+                self.logger.error("Module '{}' didn't specify a class!".format(name))
                 return False
-            return name, module
+            return module
         except (Exception) as e:
+            # FIXME: use logging lib
             print("Failed loading:", name)
             print(traceback.format_exc())
             print(sys.exc_info()[0])
             return False
 
     def load_module(self, name):
-        pass
+        module = self._import_module(name)
+        return module
 
 if __name__ == "__main__":
     ml = ModuleLoader()
