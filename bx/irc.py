@@ -26,7 +26,7 @@ class IRCClient:
         # Logging
         self.logger = logging.getLogger(__name__)
 
-        self.debug = 1
+        self.debugging = 1
 
         # Server details
         self.host = host
@@ -46,7 +46,7 @@ class IRCClient:
 
         # TODO: Implement setter
         # How many seconds to wait between lines sent to the server
-        self.send_throttling = 1
+        self.send_throttling = 0.05
 
         # TODO: Implement setter
         # What encoding to use when sending to the IRC server
@@ -116,7 +116,8 @@ class IRCClient:
         self.inited = True
 
     def debug_log(self, *args):
-        if not self.debug: return False
+        if not self.debugging:
+            return False
         msg = " ".join(map(str, args))
         print("IRC DEBUG:" + msg)
 
@@ -145,6 +146,9 @@ class IRCClient:
 
     def set_realname(self, realname):
         self.realname = realname
+
+    def set_debugging(self, val):
+        self.debugging = val
 
     #
     # Client actions
@@ -203,7 +207,7 @@ class IRCClient:
                 return False
 
     def send(self, data):
-        # self.debug_log("send:", data)
+        self.debug_log("send:", data)
         if len(data) > 510:
             self.debug_log("send(): data too long!")
         data += "\r\n"
@@ -243,6 +247,8 @@ class IRCClient:
         return True
 
     def keep_alive(self):
+        if not self.irc_connected:
+            return False
         if self.last_receive_time is not None:
             elapsed = time.time() - self.last_receive_time
         else:
@@ -291,10 +297,10 @@ class IRCClient:
         self.send("JOIN {} {}".format(chanlist, keylist))
 
     def part_channels(self, channels):
-        if type(channels) in [type(u""), type("")]:
+        if type(channels) in [str]:
             channels = [channels]
         chanlist = ",".join(channels)
-        self.SendLine("PART {}".format(chanlist))
+        self.send("PART {}".format(chanlist))
 
     def join(self, channel, keys=[]):
         self.join_channels(channel, keys)
@@ -344,6 +350,7 @@ class IRCClient:
     def on_connected(self):
         """Called when the client has connected to the server."""
         self.irc_connected = True
+        self.last_receive_time = time.time()
         self._dispatch_event()
         self.introduce()
 
@@ -397,7 +404,7 @@ class IRCClient:
         self.change_nick(self.get_nick() + "_")
 
     def on_welcome_info(self, data):
-        """Sent when welcom info is received."""  # TODO: More elaborate docstring.
+        """Sent when welcome info is received."""  # TODO: More elaborate docstring.
         self._dispatch_event()
 
     def on_support_info(self, data):
@@ -445,6 +452,9 @@ class IRCClient:
     def on_channel_topic_is(self, channel, data):
         self._dispatch_event()
 
+    def on_channel_topic_changed(self, channel, nick, data):
+        self._dispatch_event()
+
     def on_channel_topic_meta(self, channel, nick, utime):
         self._dispatch_event()
 
@@ -472,16 +482,13 @@ class IRCClient:
     def on_channel_part(self, channel, nick, data):
         self._dispatch_event()
 
-    def on_channel_topic_changed(self, channel, nick, topic):
-        self._dispatch_event()
-
-    def on_channel_kick(self, channel, who, nick, reason):
+    def on_channel_kick(self, channel, nick, who, reason):
         self._dispatch_event()
 
     # All events
     def on_event(self, name, args):
         """Called for each event that occurs, with event name and arguments."""
-        self.debug_log("EVT:", name, args)
+        self.debug_log("EVT: {} {}".format(name, args))
         for handler in self.event_handlers:
             handler(name, args)
 
@@ -747,7 +754,8 @@ class IRCClient:
                 self.on_quit(nick, text_data)
             elif command == "kick":
                 who = parts[3]
-                self.on_channel_kick(target, who, nick, text_data)
+                kicked_by = nick
+                self.on_channel_kick(target, who, kicked_by, text_data)
             elif command == "nick":
                 self.on_nick_changed(nick, text_data)
             elif command == "mode":
