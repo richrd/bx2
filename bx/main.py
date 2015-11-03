@@ -78,7 +78,10 @@ class App:
         self.running = 1
         self.create_bots()
         self.start_bots()
-        self.http_server.start()
+        try:
+            self.http_server.start()
+        except:
+            self.logger.error("Starting HTTP Server Failed!")
         self.mainloop()
 
     def create_bots(self):
@@ -107,8 +110,9 @@ class App:
         while self.running:
             for bot in self.bots.values():
                 bot.mainloop()
+            # FIXME: This has performance issues. Checking for connections wastes time :(
             self.http_server.serve()
-            time.sleep(0.01)
+            time.sleep(0.001)
 
     def reboot(self):
         """Stores a snapshot of all bots, shuts down them down and reloads them with the snapshots."""
@@ -156,8 +160,8 @@ class App:
         config = self.config.get_servers()[bot_name]
         irc_bot = bot_main.Bot(self, bot_name, config)
         irc_bot.init()
-        irc_bot._unserialize(self.bot_snapshots[bot_name])
         irc_bot.setup_client()
+        irc_bot._unserialize(self.bot_snapshots[bot_name])
         irc_bot.setup_events()
         self.bots[bot_name] = irc_bot
 
