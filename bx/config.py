@@ -5,9 +5,57 @@ Config handler
 import os
 import json
 import logging
+import hashlib
 import collections
 
 from . import helpers
+
+
+class Account:
+    def __init__(self, config, data, filename=None):
+        self.config = config
+        self.data = data
+        self.filename = filename
+
+    def set_data(self, data):
+        self.data = data
+
+    def add_hostname(self, hostname):
+        self.get_hostnames().append(hostname)
+
+    def get_username(self):
+        return self.data["username"]
+
+    def get_filename(self):
+        return self.filename
+
+    def get_data(self):
+        return self.data
+
+    def get_servers(self):
+        return self.data["servers"].keys()
+
+    def get_server_channels(self, server):
+        return self.data["servers"][server]
+
+    def get_permission_level(self):
+        return self.data["level"]
+
+    def get_hostnames(self):
+        return self.data["hostnames"]
+
+    def valid_password(self, pw):
+        # FIXME: deprecate md5
+        in_hash = self.config._sha224_hash(pw)
+        if in_hash == self.data["password"]:
+            return True
+        in_hash = self.config._md5_hash(pw)
+        if in_hash == self.data["password"]:
+            return True
+        return False
+
+    def store(self):
+        self.config.store_account(self)
 
 
 class Config:
@@ -28,6 +76,14 @@ class Config:
         self.servers = {}
         self.accounts = {}
 
+    def _sha224_hash(self, s):
+        s = s.encode("utf-8")
+        return hashlib.sha224(s).hexdigest()
+
+    def _md5_hash(self, s):
+        s = s.encode("utf-8")
+        return hashlib.md5(s).hexdigest()
+
     def init(self):
         self.create_config_dirs()
         return self.load_defaults()
@@ -43,8 +99,32 @@ class Config:
     def get_servers(self):
         return self.servers
 
+    def get_account_names(self):
+        return [account.get_username() for account in self.get_accounts()]
+
+    def get_account(self, name):
+        if name in self.accounts.keys():
+            return self.accounts[name]
+        return False
+
     def get_accounts(self):
-        return self.accounts
+        accounts = []
+        for account in self.accounts.values():
+            accounts.append(account)
+        return accounts
+
+    def get_account_by_hostname(self, hostname):
+        for account in self.get_accounts():
+            if hostname in account.get_hostnames():
+                return account
+        return False
+
+    def authenticate_account(self, username, password):
+        account = self.get_account(username)
+        if not account:
+            return False
+        if account.valid_password(password):
+            return account
 
     def set_config_dir(self, path):
         self.config_dir = path
@@ -73,27 +153,36 @@ class Config:
 
     def load_servers(self):
         files = self.get_config_files(self.server_dir)
+        # REFACTOR load_config_files parsing! new items are [filename, config]
         server_configs = self.load_config_files(self.server_dir, files)
         if not server_configs:
             self.logger.warning("No servers configured!")
             return False
-        self.logger.debug("self.config: {}".format(self.config))
-        for server in server_configs:
+        #self.logger.debug("self.config: {}".format(self.config))
+        for item in server_configs:
+            server = item[1]
             defaults = dict(self.config["server"])
-            self.logger.debug("defaults: {}".format(defaults))
-            self.logger.debug("server: {}".format(server))
+            #self.logger.debug("defaults: {}".format(defaults))
+            #self.logger.debug("server: {}".format(server))
             self.servers[server["name"]] = self.update(defaults, server)
         return True
 
     def load_accounts(self):
         files = self.get_config_files(self.account_dir)
+        # REFACTOR load_config_files parsing! new items are [filename, config]
         account_configs = self.load_config_files(self.account_dir, files)
         if not account_configs:
             self.logger.warning("No accounts configured!")
             return False
-        for account in account_configs:
-            self.accounts[account["username"]] = account
+        for item in account_configs:
+            account = Account(self, item[1], item[0])
+            # self.accounts[account["username"]] = account
+            self.accounts[account.get_username()] = account
         return True
+
+    def store_account(self, account):
+        path = os.path.join(self.account_dir, account.get_filename())
+        return self.store_config_file(path, account.get_data())
 
     def load_config_files(self, path, files):
         configs = []
@@ -103,7 +192,8 @@ class Config:
             if not conf:
                 self.logger.warning("Failed to load config file '{}'.".format(file_path))
                 continue
-            configs.append(conf)
+            configs.append([name, conf])
+            # configs.append(conf)
         return configs
 
     def get_config_files(self, path):
@@ -141,6 +231,15 @@ class Config:
             return config
         except:
             return False
+
+    def store_config_file(self, path, data):
+        try:
+            f = open(path)
+            f.write(json.dumps(data, indent=4))
+            f.close()
+            return True
+        except:
+            self.logger.exception("Storing config file '{}' failed!".format(path))
 
     def create_config_dirs(self):
         """Create all config directories."""
@@ -181,7 +280,6 @@ class Config:
 
     def update(self, d, u):
         """Merge two dicts. Used for merging config to defaults."""
-        # for k, v in u.iteritems():
         for k, v in u.items():
             if isinstance(v, collections.Mapping):
                 r = self.update(d.get(k, {}), v)
