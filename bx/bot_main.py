@@ -3,6 +3,7 @@ The Bot class for handling a single IRC server.
 """
 
 import __future__
+import os
 import time
 import logging
 
@@ -12,9 +13,10 @@ from . import bot_event
 from . import bot_user
 from . import bot_windows
 from . import bot_message
+from . import module_loader
 
 # Modules that require reloading
-__reload__ = [irc, irc_constants, bot_event, bot_user, bot_windows, bot_message]
+__reload__ = [irc, irc_constants, bot_event, bot_user, bot_windows, bot_message, module_loader]
 
 
 class Bot:
@@ -28,11 +30,18 @@ class Bot:
         self.reconnect_wait = 5
         self.reconnect_wait_increase = 30
 
+        # TODO: Experimental, might wan't to add this to default settings
+        self.remove_window_on_leave = 1
+
         # Setup our logger with module and network name
         self.logger = logging.getLogger("{}[{}]".format(__name__, self.name))
 
         # Create IRC client
         self.irc = irc.IRCClient()
+
+        # Module Loader
+        self.module_loader = module_loader.ModuleLoader()
+        self.module_loader.set_module_path(os.path.join(self.app.app_path, "modules"))
 
         # Event handlers (callbacks that are called with each event that occurs)
         self.event_handlers = []
@@ -67,6 +76,7 @@ class Bot:
         self.irc.init()
         self.setup_client()
         self.setup_events()
+        self.load_modules()
 
     def start(self):
         self.running = 1
@@ -98,6 +108,71 @@ class Bot:
     def setup_events(self):
         self.irc.add_event_handler(self.on_irc_event)
 
+    def load_modules(self):
+        mod_names = self.module_loader.get_available_modules()
+        for name in mod_names:
+            module = self.module_loader.load_module(name)
+            if not module:
+                self.logger.warning("Failed to load module '{}'".format(name))
+                continue
+            cls = module.module_class
+            inst = cls(self)
+            options = cls.declare()
+            self.set_module_options(name, inst, options)
+            self.modules[name] = inst
+
+    def set_module_options(self, name, instance, options):
+        instance.set_name(name)
+        if "zone" in options.keys():
+            instance.set_zone(options["zone"])
+        if "level" in options.keys():
+            instance.set_level(options["level"])
+        if "throttle_time" in options.keys():
+            instance.set_throttle_time(options["throttle_time"])
+
+    def get_nick(self):
+        return self.irc.get_nick()
+
+    def get_bot_user(self):
+        try:
+            return self.get_user(self.get_nick())
+        except:
+            self.logger.exception("Bot user not found in user list!")
+        return False
+
+    def get_user(self, nick):
+        for user in self.users:
+            if user.get_nick() == nick:
+                return user
+        return False
+
+    def get_users(self):
+        return self.users
+
+    def get_user_create(self, nick):
+        """Get a user instance and create it if it doesn't exist."""
+        user = self.get_user(nick)
+        if not user:
+            user = self.create_user(nick)
+        return user
+
+    def get_windows(self):
+        return self.windows
+
+    def get_window(self, name):
+        for window in self.windows:
+            if window.get_name() == name:
+                return window
+        return False
+
+    def get_module(self, name):
+        if name in self.modules.keys():
+            return self.modules[name]
+        return False
+
+    def get_modules(self):
+        return self.modules.values()
+
     def on_irc_event(self, name, args):
         """Receive and handle an event from the IRC client."""
         evt = bot_event.Event(self)
@@ -105,15 +180,51 @@ class Bot:
         self.handle_event(evt)
 
     def on_connected(self):
-        pass
+        self.logger.info("Connected!")
+
+    def on_disconnect(self):
+        self.logger.debug("on_disconnect: running:{} enabled:{}".format(self.running, self.config["enabled"]))
+        # Set users offline
+        for user in self.get_users():
+            user.set_online(0)
+        if self.running and self.config["enabled"]:
+            self.reconnect()
 
     def on_irc_ready(self):
         self.reconnect_wait = self.default_reconnect_wait  # Reset the reconnect time after successfull connect
         self.auto_join()
 
     def on_connect_throttled(self):
-        self.logger.debug("CONNECTION THROTTLED, ADDING TIME!")
+        self.logger.debug("Connection throttled, increasing reconnect delay!")
         self.reconnect_wait += self.reconnect_wait_increase
+
+    def on_privmsg(self, event):
+        cmd_str = self.get_message_command(event.data)
+        if cmd_str:
+            parts = cmd_str.split(" ")
+            cmd = parts[0]
+            args = " ".join(parts[1:])
+            self.run_command(cmd, args, event)
+
+    def get_message_command(self, msg):
+        nick = self.get_nick()
+        # Check nick command
+        if len(msg) > len(nick)+1:
+            if msg.lower()[:len(nick)] == nick.lower():
+                if msg[len(nick)] in [",", ":"]:
+                    return msg[len(nick)+1:].strip()
+        # Check prefix command
+        prefix = self.config["cmd_prefix"]
+        if len(msg) < len(prefix)+1:
+            return False
+        if msg[:len(prefix)] == prefix:
+            return msg[len(prefix):]
+        return False
+
+    def run_command(self, command, args, event):
+        if command in self.modules.keys():
+            module = self.modules[command]
+            module._execute(event.window, event.user, args)
 
     def create_message_from_event(self, event):
         msg = bot_message.Message(event.irc_args["nick"], event.irc_args["data"], event.irc_args["target"])
@@ -127,8 +238,7 @@ class Bot:
         if event.name == "on_connected":
             self.on_connected()
         elif event.name == "on_disconnect":
-            if self.running and self.config["enabled"]:
-                self.reconnect()
+            self.on_disconnect()
         elif event.name == "on_connect_throttled":
             self.on_connect_throttled()
         elif event.name == "on_irc_ready":
@@ -138,89 +248,62 @@ class Bot:
             if not user:
                 user = self.create_user(event.irc_args["nick"])
             user.set_hostname(event.irc_args["hostname"])
-        elif event.name == "on_nick_changed":
-            user = self.get_user(event.irc_args["nick"])
-            if user:
-                user.set_nick(event.irc_args["new_nick"])
-            else:
-                self.logger.warning("Unknown user '{}' is now '{}'".format(
-                    event.irc_args["nick"],
-                    event.irc_args["new_nick"])
-                )
+        elif event.name == "on_privmsg":
+            self.on_privmsg(event)
+        elif event.name in ["on_channel_part", "on_channel_kick"]:
+            if event.user == self.get_bot_user():
+                if self.remove_window_on_leave:
+                    self.remove_window(event.window)
         if event.name == "on_nick_changed":
-            user = self.get_user(event.irc_args["nick"])
-            if user:
-                user.set_nick(event.irc_args["new_nick"])
+            if event.user:
+                event.user.set_nick(event.irc_args["new_nick"])
             else:
                 self.logger.warning("Unknown user '{}' is now '{}'".format(
                     event.irc_args["nick"], event.irc_args["new_nick"])
                 )
         self.trigger_event_handlers(event)
-        self.handle_debugging_event(event)
-        self.log_current_status()
-
-    def handle_debugging_event(self, event):
-        if event.name == "on_privmsg":
-            if event.user.get_nick() == "wavi":
-                self.handle_debugging_msg(event)
-
-    def handle_debugging_msg(self, event):
-        self.logger.debug("handle_debugging_msg")
-        debug_chr = "!"
-
-        msg = self.create_message_from_event(event)
-        text = msg.get_text()
-        parts = text.split(" ")
-        cmd = parts[0]
-        self.logger.debug("handle_debugging_msg {}".format(parts))
-        self.logger.debug("cmd: {}".format(cmd))
-
-        if len(cmd) > 1:
-            if cmd[0] != debug_chr:
-                return False
-            cmd = cmd[1:]
-
-        if len(parts) == 1:
-            if cmd == "reboot":
-                self.logger.debug("Trying to reboot bots!")
-                self.app.reboot()
-            if cmd == "disco":
-                self.irc.disconnect()
-        else:
-            if cmd in ["exec", "eval"]:
-                operation = eval
-                if cmd == "exec":
-                    operation = exec
-                result = "Run code: {} failed, sry.".format(cmd)
-                try:
-                    result = operation(" ".join(parts[1:]))
-                except:
-                    pass
-                event.window.privmsg(result)
 
     def handle_http_request(self, request, path):
         window_names = [win.get_name() for win in self.windows]
-        data = "BOT:{}\n".format(self.name)
-        data += "WINDOWS:{}\n".format(window_names)
+        data = "BOT:{} - {}\n".format(self.name, self.get_nick())
+        data += "\n"
+
+        data += "USERS:\n"
+        for user in self.users:
+            acc_name = ""
+            if user.is_authed():
+                acc_name = " "+user.account.get_username()
+            online = ["no", "yes"][user.get_online()]
+            data += "{} [{}{}] online:{} {}\n".format(user, user.get_permission_level(), acc_name, online, user.get_hostname())
+        data += "\n"
+
+        data += "WINDOWS:\n"
         for win_name in window_names:
-            data += win_name+"\n"
-            win_users = self.get_window(win_name).get_users()
-            data += "RAW_USERS:{}\n".format(win_users)
-            data += str(win_users) + "\n"
+            win = self.get_window(win_name)
+            data += "[ WIN: {} ]\n".format(win_name)
+            if win.zone == irc_constants.ZONE_CHANNEL:
+                data += "TOPIC: {}\n".format(win.topic)
+            win_users = win.get_users()
+            data += "USERS:{}\n".format(list(win_users))
+            data += "\n"
+
+        names = self.app.config.get_account_names()
+        data += "ACCOUNTS:{}\n".format(", ".join(names))
+        data += "MODULES:{}\n".format(", ".join(map(str, self.modules)))
+
         response = {"data": data}
         return response
-
-    def log_current_status(self):
-        return
-        self.logger.debug("self.windows: {}".format(self.windows))
-        self.logger.debug("self.users: {}".format(self.users))
 
     def add_event_handler(self, callback):
         self.event_handlers.append(callback)
 
     def trigger_event_handlers(self, event):
+        # Trigger explicitly registered event handlers
         for handler in self.event_handlers:
             handler(event)
+        # Trigger event on all modules
+        for module in self.get_modules():
+            module.on_event(event)
 
     def auto_join(self):
         self.irc.join_channels(self.config["channels"].keys())
@@ -244,28 +327,20 @@ class Bot:
         self.windows.append(window)
         return window
 
-    def get_user(self, nick):
-        for user in self.users:
-            if user.get_nick() == nick:
-                return user
-        return False
-
-    def get_user_create(self, nick):
-        """Get a user instance and create it if it doesn't exist."""
-        user = self.get_user(nick)
-        if not user:
-            user = self.create_user(nick)
-        return user
-
-    def get_window(self, name):
-        for window in self.windows:
-            if window.get_name() == name:
-                return window
-        return False
+    def remove_window(self, win):
+        self.logger.debug("Removing window {}...".format(win))
+        if isinstance(win, str):
+            win = self.get_window(win)
+        if not win:
+            self.logger.warning("Trying to remove window that doesn't exist!")
+            return False
+        del self.windows[self.windows.index(win)]
+        return True
 
     def _serialize(self):
         serialized = {
             "name": self.name,
+            "running": self.running,
             "irc": self.irc._serialize(),
             "users": [user._serialize() for user in self.users],
             "windows": [window._serialize() for window in self.windows],
@@ -274,10 +349,10 @@ class Bot:
 
     def _unserialize(self, serialized):
         self.name = serialized["name"]
+        self.running = serialized["running"]
 
         self.irc = irc.IRCClient()
         self.irc._unserialize(serialized["irc"])
-
         self.users = []
         for item in serialized["users"]:
             user = bot_user.User(self, item["nick"])
@@ -286,7 +361,10 @@ class Bot:
 
         self.windows = []
         for item in serialized["windows"]:
-            window = bot_windows.Channel(self, item["name"])
+            if item["zone"] == irc_constants.ZONE_QUERY:
+                window = bot_windows.Query(self, item["name"])
+            else:
+                window = bot_windows.Channel(self, item["name"])
             window._unserialize(item)
             self.windows.append(window)
 
