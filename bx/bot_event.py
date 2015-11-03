@@ -24,6 +24,7 @@ class Event:
 
         self.name = name
         self.user = None
+        self.data = ""
         self.window = None
         self.irc_event = None
         self.irc_args = {}
@@ -33,9 +34,13 @@ class Event:
         self.name = name
         self.irc_args = irc_args
 
-        # Store the correct event time if available
+        # Store the correct event time
         if "time" in irc_args.keys():
             self.time = irc_args["time"]
+
+        # Store the event data string
+        if "data" in irc_args.keys():
+            self.data = irc_args["data"]
 
         # If channel is present, try to create it
         if "channel" in irc_args.keys():
@@ -50,7 +55,12 @@ class Event:
             target = irc_args["target"]
             win = self.bot.get_window(target)
             if not win:
-                win = self.bot.create_window(target)
+                if target == self.bot.get_nick():
+                    win = self.bot.get_window(irc_args["nick"])
+                    if not win:
+                        win = self.bot.create_window(irc_args["nick"])
+                else:
+                    win = self.bot.create_window(target)
             self.window = win
 
         # If nick is present, try to create the user
