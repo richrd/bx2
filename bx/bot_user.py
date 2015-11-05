@@ -14,7 +14,7 @@ class User:
         self.hostname = ""
         self.ident = ""
 
-        self.online = 1
+        self.online = 0
         self.created = time.time()
 
         self.first_seen_time = time.time()
@@ -24,7 +24,7 @@ class User:
         self.last_active = None
         self.last_command = None
 
-        self.account = False     # If False the user hasn't logged in
+        self.account = None
 
         # Listen to all bot events
         self.bot.add_event_handler(self.on_event)
@@ -91,7 +91,8 @@ class User:
 
     def set_online(self, online):
         self.online = online
-        self.on_online()
+        if online:
+            self.on_online()
 
     def set_first_seen_time(self, first_seen_time):
         self.first_seen_time = first_seen_time
@@ -115,19 +116,25 @@ class User:
     def on_online(self):
         pass
 
+    def on_offline(self):
+        self.account = None
+
     def on_action(self):
         if not self.get_online():
             self.set_online(1)
         self.last_active = time.time()
 
     def on_event(self, event):
+        # Skip all events that aren't this user
         if event.user != self:
-            # Skip all events that aren't this user
             return False
 
         if event.name == "on_quit":
             self.set_online(0)
             self.set_quit_time(time.time())
+            self.deauthenticate()
+        if event.name == "on_channel_topic_meta":
+            pass  # Avoid triggering on_action
         else:
             self.on_action()
 
@@ -136,13 +143,7 @@ class User:
     #
 
     def authenticate(self, username, password):
-        account = self.bot.app.config.authenticate_account(username, password)
-        if account:
-            self.account = account
-        return account
-
-    def auto_authenticate(self):
-        account = self.bot.app.config.get_account_by_hostname(self.get_hostname())
+        account = self.bot.app.config.authenticate_account(self, username, password)
         if account:
             self.account = account
         return account
@@ -154,7 +155,7 @@ class User:
         return False
 
     def auto_authenticate(self):
-        account = self.bot.app.config.get_account_by_hostname(self.get_hostname())
+        account = self.bot.app.config.get_account_by_hostname(self, self.get_hostname())
         if account:
             self.account = account
         return account
