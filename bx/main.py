@@ -90,7 +90,6 @@ class App:
         for server_name in servers.keys():
             server_config = servers[server_name]
             self.create_bot(server_name, server_config)
-        self.logger.debug(self.bots)
 
     def create_bot(self, name, config):
         """Create a single bot with a name and config."""
@@ -122,6 +121,7 @@ class App:
         self._unserialize()
 
     def handle_http_request(self, request):
+        """Handle a HTTP request object from the HTTP server."""
         path = request.parsed_url.path
         if path[0] == "/":
             path = path[1:]
@@ -135,7 +135,7 @@ class App:
             run_time = "%d:%02d:%02d" % (h, m, s)
             data = "BX\n"
             data += "RUN TIME:{}\n".format(run_time)
-            data += "BOTS:{}\n".format(self.bots.keys())
+            data += "BOTS:{}\n".format(", ".join(self.bots.keys()))
             response = {
                 "data": data
             }
