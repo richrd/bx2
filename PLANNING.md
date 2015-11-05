@@ -22,96 +22,104 @@
  * [X] Rebooting of bot(s) without losing connection
  * [X] Integrated HTTP server (for sending logs, providing API etc)
  * [ ] Remotely updating the bot from the github repository
+ * [ ] Support server passwords
+ * [ ] Verify all core modules before reloading to avoid syntax error crashes
+ * [ ] Automatically get a hostname with USERHOST
+ * [ ] MAYBE use 005:
+       > In early implementations of IRC this had to be hard-coded in the
+       > client but there is now a de facto standard extension to the protocol
+       > called ISUPPORT that sends this information to the client at connect
+       >time using numeric 005.
 
 ## Plugins
 
 ### Core Plugins
 
-* addaccount
+* [ ] addaccount
 > Add a new bot account.
 
-* alias
+* [ ] alias
 > Add an alias for a command.
 
-* auth
+* [X] auth
 > Log in to the bot with an existing username and password.
 
-* autochanmode
+* [ ] autochanmode
 > Maintain channel modes (modes are defined in server channel config).
 
-* autoop
+* [ ] autoop
 > Automatically op trusted users (**How to define user and channel to auto op?**).
 
-* autorejoin
+* [ ] autorejoin
 > Automatically rejoin a channel after kick.
 
-* broadcast
+* [ ] broadcast
 > Broadcast messages or command output to channels and/or users (targets) at a defined interval.
 
-* calc
+* [ ] calc
 > Calculator: calculate basic math and show result. (Use https://github.com/danthedeckie/simpleeval/)
 
-* clearlogs
+* [ ] clearlogs
 > Clear logs in a window. Clear all by default or clear messages since a time or duration.
 
-* commands
+* [ ] commands
 > List the commands that the user has access to.
 
-* deauth
+* [ ] deauth
 > Log out of the bot.
 
-* dropsend
+* [ ] dropsend
 > Clear the remaining send message queue (data queued for sending to the server).
 
-* help
+* [X] help
 > Bot help command.
 
-* highlight
+* [ ] highlight
 > Highlight everyone on current channel.
 
-* join
+* [X] join
 > Make the bot join a channel (or rejoin the current channel).
 
-* level
+* [X] level
 > Show the permission level of the asking user (or a specified user).
 
-* logs
+* [ ] logs
 > Get channel logs. Allows asking for specific channel (if sufficient privileges) and send logs as a HTTP link.
 
-* msg
+* [ ] msg
 > Make the bot send a message to a user or channel
 
-* msgcount
+* [ ] msgcount
 > Show log size for window.
 
-* newpass
+* [ ] newpass
 > Change user password.
 
-* nick
+* [X] nick
 > Change bot nick.
 
-* part
+* [X] part
 > Make the bot leave the current channel (or a specified channel).
 
-* ping
+* [X] ping
 > ping the bot to see if it's alive
 
-* raw
+* [ ] raw
 > Send raw data to IRC server.
 
-* reconnect
+* [ ] reconnect
 > Reconnect to an irc server.
 
-* run
+* [ ] run
 > Run a command as a specifi user on a channel in a certain IRC network.
 
-* topic
+* [ ] topic
 > Change channel topic.
 
-* trustme
+* [ ] trustme
 > Associate a user hostname with their account.
 
-* url
+* [X] url
 > Show url titles.
 
 ### Extra Plugins
@@ -165,17 +173,20 @@ It's a bit crude with the parsing, but it works well. The new version also emits
             * [X] They quit
             * [X] The bot gets disconnected (no chance of bookkeeping when not connected)
     * [ ] authed
-        * [ ] The user should be deauthed when they go offline
-        * [ ] When the bot disconnects
+        * [X] The user should be deauthed when they go offline
+        * [X] When the bot disconnects
         * [ ] The user should be authed when their hostname
 
 * [ ] Window status
     * [ ] Users
-        * [ ] All users in a window must be cleared when:
-            * [ ] The bot parts that channel
-            * [ ] When the bot gets disconnected
+        * [X] All users in a window must be cleared when:
+            * [X] The bot parts that channel
+            * [X] When the bot gets disconnected
         * [ ] Modes
-    * [ ] Channel modes
+    * [X] Channel modes
+        * [X] Get modes on join
+        * [X] Detect mode changes
+    * [ ] Channel topic
 
 ### Modules
 
