@@ -1,9 +1,9 @@
 {
     "server": {
-        "nick": "bx2",
+        "nick": "bx",
         "nick_suffix": "_",
-        "ident": "bx2",
-        "realname": "bx2",
+        "ident": "bx",
+        "realname": "bx",
         "cmd_prefix": ".",
         "cmd_separator": "\u00a7",
         "cmd_throttle": 1.5,
