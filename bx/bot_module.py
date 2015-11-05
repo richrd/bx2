@@ -1,5 +1,6 @@
 
 import time
+import urllib
 import logging
 
 from bx import irc_constants
@@ -69,6 +70,20 @@ class BotModule:
     def on_event(self, event):
         """Invoked when the module is called or run by a user."""
         pass
+
+    #
+    # Special helper functions
+    #
+
+    def retrieve_url(self, url):
+        try:
+            u = urllib.request.urlopen(url, timeout=5)
+            data = u.read()
+            u.close()
+            return data
+        except Exception:
+            self.logger.warning("Failed to get url '{}'".format(url))
+            return False
 
     def _is_allowed_window(self, win):
         if self.zone == irc_constants.ZONE_BOTH or self.zone == win.zone:
