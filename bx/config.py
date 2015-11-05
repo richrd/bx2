@@ -17,20 +17,39 @@ class Account:
         self.data = data
         self.filename = filename
 
+    #
+
     def set_data(self, data):
         self.data = data
 
-    def add_hostname(self, hostname):
-        self.get_hostnames().append(hostname)
+    def set_username(self, username):
+        self.data["username"] = username
+
+    def set_filename(self, filename):
+        self.filename = filename
+
+    def set_servers(self, servers):
+        self.data["servers"] = servers
+
+    def set_server_channels(self, server, channels):
+        self.data["servers"][server] = channels
+
+    def set_permission_level(self, permission_level):
+        self.data["level"] = permission_level
+
+    def set_hostnames(self, hostnames):
+        self.data["hostnames"] = hostnames
+
+    #
+
+    def get_data(self):
+        return self.data
 
     def get_username(self):
         return self.data["username"]
 
     def get_filename(self):
         return self.filename
-
-    def get_data(self):
-        return self.data
 
     def get_servers(self):
         return self.data["servers"].keys()
@@ -43,6 +62,17 @@ class Account:
 
     def get_hostnames(self):
         return self.data["hostnames"]
+
+    #
+
+    def has_server(self, server):
+        return server in self.get_servers()
+
+    def is_trusted_channel(self, server, channel):
+        pass
+
+    def add_hostname(self, hostname):
+        self.get_hostnames().append(hostname)
 
     def valid_password(self, pw):
         # FIXME: deprecate md5
@@ -113,15 +143,19 @@ class Config:
             accounts.append(account)
         return accounts
 
-    def get_account_by_hostname(self, hostname):
+    def get_account_by_hostname(self, user, hostname):
         for account in self.get_accounts():
+            if not account.has_server(user.bot.get_name()):
+                continue
             if hostname in account.get_hostnames():
                 return account
         return False
 
-    def authenticate_account(self, username, password):
+    def authenticate_account(self, user, username, password):
         account = self.get_account(username)
         if not account:
+            return False
+        if not account.has_server(user.bot.get_name()):
             return False
         if account.valid_password(password):
             return account
@@ -234,7 +268,7 @@ class Config:
 
     def store_config_file(self, path, data):
         try:
-            f = open(path)
+            f = open(path, "w")
             f.write(json.dumps(data, indent=4))
             f.close()
             return True
