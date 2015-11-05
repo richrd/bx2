@@ -26,6 +26,8 @@ class Event:
         self.user = None
         self.data = ""
         self.window = None
+        self.modes = []
+
         self.irc_event = None
         self.irc_args = {}
 
@@ -71,4 +73,9 @@ class Event:
                 if not user:
                     user = self.bot.create_user(nick)
                 self.user = user
+
+        # If modes are present
+        if "modes" in irc_args.keys():
+            self.modes = irc_args["modes"]
+
         return self
