@@ -63,6 +63,21 @@ class IRCClient:
         # Event handlers (callbacks called with events)
         self.event_handlers = []
 
+        # Exclude event log
+        self.exclude_events = [
+            "on_ping",
+            "on_i_joined",
+            "on_channel_has_users",
+            "on_nick_in_use",
+            "on_parse_nick_hostname",
+            "on_channel_join",
+            "on_parse_nick_hostname",
+            "on_channel_topic_is",
+            "on_channel_user_modes_changed",
+            "on_channel_creation_time",
+            "on_channel_modes_are",
+        ]
+
         # Flag indicating if the client has been initialized
         self.inited = False
 
@@ -243,6 +258,8 @@ class IRCClient:
             return False
         else:
             self.debug_log("mainloop()", "socket inaccessible")
+            self.disconnect()
+            return False
         self.process()
         return True
 
@@ -326,6 +343,9 @@ class IRCClient:
         # TODO: wrap long msgs into multiple NOTICEs
         self.send("NOTICE {} :{}".format(dest, msg))
 
+    def action(self, dest, msg):
+        self.privmsg(dest, "\x01ACTION {}\x01".format(msg))
+
     def set_channel_user_modes(self, chan, nickmodes, operation=True):
         if operation:
             modes = "+"
@@ -342,6 +362,9 @@ class IRCClient:
 
     def set_channel_modes(self, chan, modes):
         self.send("MODE {} {}".format(chan, modes))
+
+    def ask_channel_modes(self, chan):
+        self.send("MODE {}".format(chan))
 
     #
     # Client Events
@@ -442,7 +465,7 @@ class IRCClient:
     def on_my_modes_changed(self, modes):
         self._dispatch_event()
 
-    def on_channel_user_modes_changed(self, channel, users, nick):
+    def on_channel_user_modes_changed(self, channel, modes, nick):
         self._dispatch_event()
 
     def on_channel_modes_changed(self, channel, modes, nick):
@@ -488,7 +511,8 @@ class IRCClient:
     # All events
     def on_event(self, name, args):
         """Called for each event that occurs, with event name and arguments."""
-        self.debug_log("EVT: {} {}".format(name, args))
+        if name not in self.exclude_events:
+            self.debug_log("EVT: {} {}".format(name, args))
         for handler in self.event_handlers:
             handler(name, args)
 
@@ -609,14 +633,16 @@ class IRCClient:
                 return True
             left = left[sent:]
             # except:
-                # self.debug_log("send_all_to_socket errored")
-                # return False
+            #     self.debug_log("send_all_to_socket errored")
+            #     return False
         return False
 
     def process_receive_buffer(self):
         if self.recv_buffer != []:
             line = self.recv_buffer.pop(0)
-            self.parse_received_line(line)
+            parsed = self.parse_received_line(line)
+            if not parsed:
+                self.debug_log("UNPARSED {} LINE:{}".format(parsed, line))
 
     # ==============================================================================================
     # Warning: Here be dragons!
@@ -723,7 +749,7 @@ class IRCClient:
                     self.on_connect_throttled(text_data)
             else:
                 return False
-
+            return True
         # IRC text commands
         elif command:
             nick, hostname = self.parse_nick_host(line)
@@ -763,6 +789,7 @@ class IRCClient:
                     modes = parts[3]
                     self.on_my_modes_changed(modes)
                 else:
+                    # TODO: move this to a method!
                     types = ["-", "+"]
                     modes = parts[3]
                     if len(parts) > 4:      # Channel user modes are being set
@@ -780,7 +807,17 @@ class IRCClient:
                                 modes = modes[1:]
                                 continue
                             modechr = modes[i]
-                            user = (nicks[i], modechr, operation)
+                            if modechr == "o":
+                                modeval = irc_constants.MODE_OP
+                            elif modechr == "v":
+                                modeval = irc_constants.MODE_VOICE
+                            else:
+                                modeval = modechr
+                            if i < len(nicks)-1:
+                                mnick = nicks[i]
+                            else:
+                                mnick = nicks[-1]
+                            user = (mnick, modeval, operation)
                             users.append(user)
                             i += 1
                         self.on_channel_user_modes_changed(target, users, nick)
@@ -789,6 +826,7 @@ class IRCClient:
                         self.on_channel_modes_changed(target, modes, nick)
             else:
                 return False
+            return True
 
         # Numeric commands
         elif numeric:
@@ -826,6 +864,10 @@ class IRCClient:
                         self.on_channel_creation_time(channel, value)
                     elif numeric == 324:                                # Channel modes
                         modes = list(value.replace("+", ""))
+                        if "o" in modes:
+                            modes["o"] == irc_constants.MODE_OP
+                        if "v" in modes:
+                            modes["v"] == irc_constants.MODE_VOICE
                         self.on_channel_modes_are(channel, modes)
                 # Topic
                 elif numeric == 332:                                    # Channel topic
@@ -850,11 +892,17 @@ class IRCClient:
                     self.on_channel_invite_only(channel, text_data)
                 elif numeric == 475:
                     self.on_channel_needs_password(channel, text_data)
+                else:
+                    return False
+                return True
             elif numeric == 433:
                 nick = parts[3]
                 self.on_nick_in_use(nick, text_data)
             elif numeric == 465:
                 self.on_connect_throttled(text_data)
+            else:
+                return False
+            return True
         # If the command type wasn't detected (and handled) at all
         else:
             return False
