@@ -325,6 +325,7 @@ class Bot:
 
     def create_window(self, name):
         """Create a window from nick or channel name."""
+        self.logger.warning("Creating win:{}".format(name))
         if self.get_window(name):
             self.logger.warning("Trying to create an existsing window!")
             return False
