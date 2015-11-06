@@ -643,12 +643,17 @@ class IRCClient:
             parsed = self.parse_received_line(line)
             if not parsed:
                 self.debug_log("UNPARSED {} LINE:{}".format(parsed, line))
+                # IRC DEBUG:UNPARSED False LINE:NOTICE AUTH :*** Looking up your hostname
+                # IRC DEBUG:UNPARSED False LINE:NOTICE AUTH :*** Checking Ident
+                # IRC DEBUG:UNPARSED False LINE:NOTICE AUTH :*** Found your hostname
+                # IRC DEBUG:UNPARSED False LINE:NOTICE AUTH :*** No ident response
+                # IRC DEBUG:UNPARSED False LINE::servercentral.il.us.quakenet.org 221 bx +i
 
-    # ==============================================================================================
-    # Warning: Here be dragons!
-    # From here on we do stupidply manual parsing of the received IRC commands
-    # TODO: Use regex.
-    # ==============================================================================================
+    # ======================================================================== #
+    # Warning: Here be dragons!                                                #
+    # From here on we do stupidply manual parsing of the received IRC commands #
+    # TODO: Refactor and use regex!                                            #
+    # ======================================================================== #
 
     def get_text_data(self, line):
         """Return the last (multi word) parameter in the line, or False if not present."""
@@ -657,7 +662,10 @@ class IRCClient:
         if index != -1:
             return line[index+1:]
         else:
-            return False
+            data = line.split()[-1]
+            if data[0] == ":":
+                data = data[1:]
+            return data
 
     def get_clean_nick(self, nick):
         """Remove the mode char from a nick if it exists."""
@@ -762,7 +770,7 @@ class IRCClient:
                 else:
                     channel = parts[2]
                 if nick == self.current_nick:
-                    self.on_i_joined(target)
+                    self.on_i_joined(channel)
                 else:
                     self.on_channel_join(channel, nick)
             elif command == "part":
