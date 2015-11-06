@@ -13,6 +13,7 @@ import logging
 from . import bot_main
 from .config import Config
 from .logger import LoggingHandler
+from . import http_handler
 
 from .lib import pyco_http
 
@@ -54,6 +55,9 @@ class App:
         # HTTP Server
         self.http_server = pyco_http.PycoHTTP()
         self.http_server.set_default_header("content-type", "text/plain")
+
+        # HTTP Handler
+        self.http_handler = http_handler.HTTPHandler(self)
 
         # Stores serialized bots that have been stopped. Used when 'rebooting' the bots.
         # The only thing that is NOT serialized is the IRCClient instances.
@@ -116,31 +120,14 @@ class App:
     def reboot(self):
         """Stores a snapshot of all bots, shuts down them down and reloads them with the snapshots."""
         self.logger.debug("Rebooting bots!")
+        reload(http_handler)
         self._serialize()
         reload(bot_main)
         self._unserialize()
 
     def handle_http_request(self, request):
         """Handle a HTTP request object from the HTTP server."""
-        path = request.parsed_url.path
-        if path[0] == "/":
-            path = path[1:]
-        parts = path.split("/")
-        if parts[0] in self.bots.keys():
-            server = parts.pop(0)
-            return self.bots[server].handle_http_request(request, parts)
-        else:
-            m, s = divmod(time.time()-self.init_time, 60)
-            h, m = divmod(m, 60)
-            run_time = "%d:%02d:%02d" % (h, m, s)
-            data = "BX\n"
-            data += "RUN TIME:{}\n".format(run_time)
-            data += "BOTS:{}\n".format(", ".join(self.bots.keys()))
-            response = {
-                "data": data
-            }
-
-        return response
+        return self.http_handler.handle_request(request)
 
     def _serialize(self):
         """Serialize all bots."""
@@ -149,11 +136,13 @@ class App:
             self.bot_snapshots[bot_name] = copy.copy(bot_data)
         for bot_name in self.bot_snapshots.keys():
             del self.bots[bot_name]
+        self.http_handler = None
 
     def _unserialize(self):
         """Unserialize all bots."""
         for bot_name in self.bot_snapshots.keys():
             self._unserialize_bot(bot_name)
+        self.http_handler = http_handler.HTTPHandler(self)
 
     def _unserialize_bot(self, bot_name):
         """Unserialize a single bot."""
