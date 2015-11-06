@@ -158,6 +158,26 @@ It's a bit crude with the parsing, but it works well. The new version also emits
              * self.log of channel activity (for logs etc)
          * Module
 
+### Permission system
+
+Basic permissions are defined by an intiger. By default it ranges from 0 to 100.
+
+**Levels:**
+
+ * 0: GUEST - Not truested at all.
+ > No special access. This is the default permission level for everyone.
+
+ * 1 - 9: AQUAINTANCE - Slightly trusted.
+ > Lowest tier permissions. Might have some basic access that normal users don't have.
+
+ * 10 - 19: FRIEND - Trusted.
+ > Can use features such as auto op, getting logs on certain channels etc.
+
+ * 20 - 99: CURRENTLY UNDEFINED
+
+ * 100 and up: OWNER - Can do anything, and potentially run arbitrary code on the server
+
+
 ### Bookkeeping
 
 * [ ] Bot
@@ -187,6 +207,16 @@ It's a bit crude with the parsing, but it works well. The new version also emits
         * [X] Get modes on join
         * [X] Detect mode changes
     * [ ] Channel topic
+
+
+### HTTP Server
+ * [ ] Should be running and accessible at all times
+ * [ ] Should provide versatile routing
+     * [ ] Automatic hierarchial routes should be provided by default
+     * [ ] Custm routes should be able to be used too
+ * [ ] Should provide good base template for HTML content
+ * [ ] Should provide generic static resources (styles/js/images/etc)
+
 
 ### Modules
 
@@ -245,24 +275,3 @@ All keys in default server configuration can be overriden. Only the non overrida
      * hostnames (hostnames that are trusted and used for automatic authentication)
          * hostname
      * enabled True/False ???
-
-### Permission system
-
-Basic permissions are defined by an intiger. By default it ranges from 0 to 100.
-
-**Levels:**
-
- * 0: GUEST - Not truested at all.
- > No special access. This is the default permission level for everyone.
-
- * 1 - 9: AQUAINTANCE - Slightly trusted.
- > Lowest tier permissions. Might have some basic access that normal users don't have.
-
- * 10 - 19: FRIEND - Trusted.
- > Can use features such as auto op, getting logs on certain channels etc.
-
- * 20 - 99: CURRENTLY UNDEFINED
-
- * 100 and up: OWNER - Can do anything, and potentially run arbitrary code on the server
-
-
