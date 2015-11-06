@@ -11,6 +11,7 @@
         "channels": {}
     },
     "http": {
+        "host": "localhost",
         "port": 8088
     }
 }
