@@ -35,7 +35,6 @@ class Event:
         """Parse IRC event data and store it."""
         self.name = name
         self.irc_args = irc_args
-
         # Store the correct event time
         if "time" in irc_args.keys():
             self.time = irc_args["time"]
