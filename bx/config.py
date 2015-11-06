@@ -187,18 +187,15 @@ class Config:
 
     def load_servers(self):
         files = self.get_config_files(self.server_dir)
-        # REFACTOR load_config_files parsing! new items are [filename, config]
+        # TODO: REFACTOR load_config_files parsing! new items are [filename, config]
         server_configs = self.load_config_files(self.server_dir, files)
         if not server_configs:
             self.logger.warning("No servers configured!")
             return False
-        #self.logger.debug("self.config: {}".format(self.config))
         for item in server_configs:
             server = item[1]
             defaults = dict(self.config["server"])
-            #self.logger.debug("defaults: {}".format(defaults))
-            #self.logger.debug("server: {}".format(server))
-            self.servers[server["name"]] = self.update(defaults, server)
+            self.servers[server["name"]] = self.update(server, defaults)
         return True
 
     def load_accounts(self):
