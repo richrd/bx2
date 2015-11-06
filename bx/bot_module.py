@@ -46,6 +46,13 @@ class BotModule:
     def get_throttle_time(self):
         return self.throttle_time
 
+    def get_url(self):
+        parts = ["server", self.bot.get_name(), "module", self.get_name()]
+        path = "/".join(parts)
+        host = self.bot.app.config.get_item("http")["host"]
+        port = self.bot.app.config.get_item("http")["port"]
+        return "http://{}:{}/{}".format(host, port, path)
+
     def set_name(self, name):
         self.name = name
         self.logger = logging.getLogger("{}[{}]".format(self.bot.name, self.name))
@@ -69,6 +76,9 @@ class BotModule:
 
     def on_event(self, event):
         """Invoked when the module is called or run by a user."""
+        pass
+
+    def on_http_request(self, request):
         pass
 
     #
