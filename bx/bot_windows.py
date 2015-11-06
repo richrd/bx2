@@ -1,10 +1,79 @@
 
+import time
 import logging
 
 from . import irc_constants
 from . import bot_message
 
 __reload__ = [irc_constants, bot_message]
+
+
+class LogRecord:
+    def __init__(self):
+        self.name = ""
+        self.time = time.time()
+        self.data = ""
+        self.nick = ""
+        self.event = None
+        self.name_map = {
+            "on_privmsg": "privmsg",
+            "on_channel_join": "join",
+            "on_channel_part": "part",
+            "on_quit": "quit",
+        }
+
+    def set_name(self, name):
+        self.name = name
+
+    def set_time(self, time):
+        self.time = time
+
+    def set_data(self, data):
+        self.data = data
+
+    def set_nick(self, nick):
+        self.nick = nick
+
+    def get_name(self):
+        return self.name
+
+    def get_time(self):
+        return self.time
+
+    def get_data(self):
+        return self.data
+
+    def get_nick(self):
+        return self.nick
+
+    def parse_from_event(self, event):
+        if event.name not in self.name_map:
+            return False
+        self.name = self.name_map[event.name]
+        self.event = event
+        self.time = event.time
+        if event.user:
+            self.nick = event.user.get_nick()
+        if event.data:
+            self.data = event.data
+        return self
+
+    def __str__(self):
+        return "{} {} {} {}".format(self.time, self.name, self.nick, self.data)
+
+    def _serialize(self):
+        serialized = {}
+        serialized["name"] = self.name
+        serialized["time"] = self.time
+        serialized["data"] = self.data
+        serialized["nick"] = self.nick
+        return serialized
+
+    def _unserialize(self, serialized):
+        self.name = serialized["name"]
+        self.time = serialized["time"]
+        self.data = serialized["data"]
+        self.nick = serialized["nick"]
 
 
 class Window:
@@ -33,23 +102,27 @@ class Window:
             return self.user.get_nick()
         return self.name
 
+    def get_log(self):
+        return self.log
+
     def is_channel(self):
         return self.zone == irc_constants.ZONE_CHANNEL
 
     def is_query(self):
         return self.zone == irc_constants.ZONE_QUERY
 
-    def add_message(self, msg_obj):
-        self.messages.append(msg_obj)
-
     def on_privmsg(self, event):
-        msg = self.bot.create_message_from_event(event)
-        self.log.append(msg)
+        self.add_log_record_from_event(event)
 
     def on_event(self, event):
         if event.name == "on_privmsg":
             if event.window == self:
                 self.on_privmsg(event)
+
+    def add_log_record_from_event(self, event):
+        # TODO: implement log limit
+        record = LogRecord().parse_from_event(event)
+        self.log.append(record)
 
     #
     # IRC Actions
@@ -77,7 +150,7 @@ class Window:
         self.name = serialized["name"]
         self.zone = serialized["zone"]
         for item in serialized["log"]:
-            msg = bot_message.Message()
+            msg = LogRecord()
             msg._unserialize(item)
             self.log.append(msg)
 
@@ -120,7 +193,6 @@ class Channel(Window):
 
     def set_changed_user_modes(self, modes):
         for item in modes:
-            print(item)
             user = self.bot.get_user(item[0])
             mode = item[1]
             oper = item[2]
@@ -198,6 +270,8 @@ class Channel(Window):
     def on_event(self, event):
         Window.on_event(self, event)
         if event.name == "on_quit":
+            if event.user in self.get_users():
+                self.add_log_record_from_event(event)
             self.remove_user(event.user)
         if event.name == "on_disconnect":
             # Clear all users on disconnect (cant do bookkeeping)
@@ -208,7 +282,10 @@ class Channel(Window):
                 self.joined = 1
             if event.name == "on_channel_join":
                 self.add_user(event.user)
+                self.add_log_record_from_event(event)
             elif event.name in ["on_channel_part", "on_channel_kick"]:
+                if event.name != "on_channel_kick":
+                    self.add_log_record_from_event(event)
                 self.remove_user(event.user)
                 if event.user == self.bot.get_bot_user():
                     event.window.clear_state()
