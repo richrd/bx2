@@ -1,0 +1,61 @@
+* {
+    box-sizing: border-box;
+}
+* html, body {
+    margin:0;
+    padding:0;
+    background-color: #323533;
+    color: #DCDCDC;
+    font-family: "Open Sans", sans-serif;
+    font-size: 16px;
+}
+a {
+    color:inherit;
+}
+#main {
+    padding: 1em .6em;
+}
+
+/*
+ * Logging output
+ */
+.log-listing .record {
+    padding: .4em .5em;
+    border-radius: 3px;
+}
+.log-listing .record .span{
+    display: inline-block;
+}
+.log-listing .record:nth-child(odd) {
+    background-color: rgba(180, 180, 180, .03);
+}
+.log-listing .record .time {
+    margin-right: 1em;
+    opacity: .4;
+    font-size: .9em;
+}
+.log-listing .record .nick {
+    min-width: 100px;
+    border-right:1px solid #2A2A2A;
+    padding-right:.5em;
+    margin-right:.5em;
+}
+.log-listing .record.privmsg .nick {
+    color: #CFECFF;
+}
+.log-listing .record.privmsg .message {
+    color: inherit;
+    line-height: 1.3;
+}
+.log-listing .record a {
+    word-break: break-all;
+}
+.log-listing .record.join {
+    color: #afa;
+}
+.log-listing .record.part {
+    color: #F7A677;
+}
+.log-listing .record.quit {
+    color: #FF6373;
+}
