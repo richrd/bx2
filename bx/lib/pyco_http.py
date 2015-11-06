@@ -181,7 +181,6 @@ class PycoHTTP:
 
     def parse_request(self, received, addr):
         # We don't support POST so get rid of request body
-        # received = received.decode("utf-8")
         needed = received.split(self.eol*2)[0]
         lines = needed.split(self.eol)
 
@@ -212,10 +211,12 @@ class PycoHTTP:
 
         # Build headers
         header_lines = []
-        headers = self.headers
+        headers = self.headers.copy()
         if "headers" in response.keys():
             # Merge new headers into defaults
-            headers = dict(self.headers.items() + response["headers"].items())
+            self.log("Headers are:{}".format(response["headers"]))
+            headers.update(response["headers"])
+            self.log("Headers are now:{}".format(headers))
         for header in headers.items():
             header_lines.append(header[0]+": "+header[1])
 
@@ -241,7 +242,7 @@ class PycoHTTP:
         if request:
             # If we have a request handler give it the request
             if self.request_handler:
-                self.log("Handling reqest...")
+                self.log("Handling request...")
                 response = self.request_handler(request)
                 if response:
                     self.respond(conn, response)
