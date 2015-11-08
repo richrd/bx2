@@ -183,6 +183,15 @@ class Channel(Window):
     def get_joined(self):
         return self.joined
 
+    def get_modes(self):
+        return self.modes
+
+    def get_users(self):
+        return self.users.keys()
+
+    def get_user_modes(self, user):
+        return self.users[user]["modes"]
+
     def set_current_modes(self, modes):
         self.modes = modes
 
@@ -216,12 +225,6 @@ class Channel(Window):
             return True
         return False
 
-    def get_modes(self):
-        return self.modes
-
-    def get_user_modes(self, user):
-        return self.users[user]["modes"]
-
     def add_user_mode(self, user, mode):
         if mode not in self.get_user_modes(user):
             self.users[user]["modes"].append(mode)
@@ -232,9 +235,6 @@ class Channel(Window):
 
     def has_user(self, user):
         return user in self.users.keys()
-
-    def get_users(self):
-        return self.users.keys()
 
     def add_user(self, user, mode=None):
         if isinstance(user, str):
