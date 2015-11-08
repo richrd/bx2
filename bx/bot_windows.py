@@ -99,7 +99,12 @@ class Window:
 
     def get_name(self):
         if self.zone == irc_constants.ZONE_QUERY:
-            return self.user.get_nick()
+            # FIXME: safety debugging check. Fix asap.
+            if self.user:
+                return self.user.get_nick()
+            else:
+                self.logger.error("Query has no user!!!")
+                return ""
         return self.name
 
     def get_log(self):
