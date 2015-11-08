@@ -11,6 +11,7 @@ from bx import bot_module
 
 
 class Logs(bot_module.BotModule):
+    # FIXME: check if user is trusted on specific channel
     @staticmethod
     def declare():
         return {"level": 10}
@@ -59,10 +60,10 @@ class Logs(bot_module.BotModule):
         log_req = self.get_log_request(id)
         if log_req:
             response = self.generate_response(log_req["window"], log_req["min_time"])
-            self.logging.debug("response {}".format(response))
+            self.logger.debug("response {}".format(response))
             return response
         else:
-            return {"data": "expired"}
+            return {"data": "This link has expired."}
 
     def get_records(self, window, min_time):
         all_records = window.get_log()
@@ -83,6 +84,7 @@ class Logs(bot_module.BotModule):
             date_str = datetime.datetime.fromtimestamp(record.get_time()).strftime('%A %d.%m.%Y')
             if date_str != prev_date_str:
                 html += '<div class="divider">{}</div>'.format(date_str)
+                prev_date_str = date_str
             message = record.get_data()
             if record.get_name() != "privmsg":
                 message = record.get_name()
