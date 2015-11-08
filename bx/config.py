@@ -207,7 +207,6 @@ class Config:
             return False
         for item in account_configs:
             account = Account(self, item[1], item[0])
-            # self.accounts[account["username"]] = account
             self.accounts[account.get_username()] = account
         return True
 
@@ -264,6 +263,7 @@ class Config:
             return False
 
     def store_config_file(self, path, data):
+        """Store data as JSON at given path."""
         try:
             f = open(path, "w")
             f.write(json.dumps(data, indent=4))
