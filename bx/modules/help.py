@@ -14,12 +14,15 @@ class Help(bot_module.BotModule):
             self.general_help(user)
         else:
             module = self.bot.get_module(data)
+            if not module:
+                win.send("I don't know that command.")
+                return False
             help_text = module.get_help_text()
+            if not help_text:
+                win.send("Sorry, no help found for that command.")
+                return False
             help_text = ' '.join(help_text.split())
-            if module:
-                win.send("{} [{}]: {}".format(module.get_name(), module.get_permission_level(), help_text))
-            else:
-                win.send("i don't know that command")
+            win.send("{} [{}]: {}".format(module.get_name(), module.get_permission_level(), help_text))
 
     def general_help(self, user):
         """Display general help."""
