@@ -120,10 +120,15 @@ class App:
     def reboot(self):
         """Stores a snapshot of all bots, shuts down them down and reloads them with the snapshots."""
         self.logger.debug("Rebooting bots!")
-        reload(http_handler)
-        self._serialize()
-        reload(bot_main)
-        self._unserialize()
+        try:
+            reload(http_handler)
+            self._serialize()
+            reload(bot_main)
+            self._unserialize()
+            return True
+        except:
+            self.logger.exception("Reboot failed!")
+            return False
 
     def handle_http_request(self, request):
         """Handle a HTTP request object from the HTTP server."""
