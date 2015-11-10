@@ -11,6 +11,8 @@ from bx import bot_module
 
 
 class Logs(bot_module.BotModule):
+    """Get channel logs."""
+
     # FIXME: check if user is trusted on specific channel
     @staticmethod
     def declare():
@@ -39,7 +41,7 @@ class Logs(bot_module.BotModule):
         }
         
         url = self.get_url()
-        win.send("{}?{}".format(url, id))
+        user.send("{}?{}".format(url, id))
 
     def get_log_request(self, id):
         if id not in self.log_requests.keys():

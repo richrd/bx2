@@ -10,6 +10,8 @@ from bx import bot_module
 
 
 class Url(bot_module.BotModule):
+    """Paste titles of urls."""
+
     def on_event(self, event):
         if event.name == "on_privmsg" and event.window.is_channel():
             self.handle_privmsg(event)

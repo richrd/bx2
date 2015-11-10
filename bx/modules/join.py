@@ -3,6 +3,8 @@ from bx import bot_module
 
 
 class Join(bot_module.BotModule):
+    """Join a channel (or rejoin the current channel)."""
+
     @staticmethod
     def declare():
         return {"level": 100}

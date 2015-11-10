@@ -6,6 +6,7 @@ from bx import bot_module
 
 class GitPull(bot_module.BotModule):
     """Pull the latest changes to the bot from git."""
+
     @staticmethod
     def declare():
         return {

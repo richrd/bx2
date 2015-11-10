@@ -3,6 +3,8 @@ from bx import bot_module
 
 
 class Nick(bot_module.BotModule):
+    """Change the bot nick."""
+
     @staticmethod
     def declare():
         return {"level": 100}

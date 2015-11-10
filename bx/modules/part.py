@@ -3,6 +3,8 @@ from bx import bot_module
 
 
 class Part(bot_module.BotModule):
+    """Part a channel or the current channel (default)."""
+
     @staticmethod
     def declare():
         return {"level": 100}
