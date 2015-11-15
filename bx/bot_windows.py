@@ -277,6 +277,13 @@ class Channel(Window):
     def change_topic(self, topic):
         self.bot.irc.set_channel_topic(self.get_name(), topic)
 
+    def change_modes(self, modes, remove=False):
+        chr = "+"
+        if remove:
+            chr = "-"
+        # TODO: construct mode change string here
+        self.bot.irc.set_channel_modes(self.get_name(), "{}{}".format(chr, "".join(modes)))
+
     def give_voice(self, users):
         if not isinstance(users, list):
             users = [users]

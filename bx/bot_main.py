@@ -153,9 +153,17 @@ class Bot:
     def get_nick(self):
         """Return the bots current nick."""
         return self.irc.get_nick()
-        
+
     def get_server_channels(self):
         return self.config["channels"].keys()
+
+    def get_server_channel_modes(self, channel):
+        if channel not in self.get_server_channels():
+            return ""
+        if "modes" in self.config["channels"][channel].keys():
+            modes = self.config["channels"][channel]["modes"]
+            return list(modes)
+        return ""
 
     def get_bot_user(self):
         """Return the user object of the bot."""
@@ -227,6 +235,7 @@ class Bot:
 
     def on_irc_ready(self):
         self.reconnect_wait = self.default_reconnect_wait  # Reset the reconnect time after successfull connect
+        self.auto_send()
         self.auto_join()
 
     def on_connect_throttled(self):
@@ -330,6 +339,11 @@ class Bot:
 
     def trigger_event(self, event):
         self.trigger_event_handlers(event)
+
+    def auto_send(self):
+        """Send auto_send contents specified in server config."""
+        for line in self.config["auto_send"]:
+            self.irc.send(line)
 
     def auto_join(self):
         """Join channels specified in server config."""

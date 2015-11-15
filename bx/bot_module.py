@@ -66,6 +66,10 @@ class BotModule:
     def set_throttle_time(self, throttle_time):
         self.throttle_time = throttle_time
 
+    def is_command(self):
+        self.logger.debug("{} {}".format(self.run_command.__doc__, BotModule.run_command.__doc__))
+        return self.run_command.__doc__ != BotModule.run_command.__doc__
+
     def init(self):
         """The init method implemented by the subclass."""
         pass

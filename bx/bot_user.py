@@ -106,9 +106,12 @@ class User:
         self.ident = ident
 
     def set_online(self, online):
-        self.online = online
-        if online:
-            self.on_online()
+        if online != self.online:
+            self.online = online
+            if online:
+                self.on_online()
+            else:
+                self.on_offline()
 
     def set_first_seen_time(self, first_seen_time):
         self.first_seen_time = first_seen_time
@@ -130,10 +133,15 @@ class User:
     #
 
     def on_online(self):
-        pass
+        event = self.bot.create_event("bot_user_online")
+        event.set_user(self)
+        self.bot.trigger_event(event)
 
     def on_offline(self):
         self.account = None
+        event = self.bot.create_event("bot_user_offline")
+        event.set_user(self)
+        self.bot.trigger_event(event)
 
     def on_action(self):
         if not self.get_online():
@@ -149,7 +157,6 @@ class User:
         # Skip all events that aren't this user
         if event.user != self:
             return False
-
         if event.name == "irc_quit":
             self.set_online(0)
             self.set_quit_time(time.time())
