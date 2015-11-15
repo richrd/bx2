@@ -10,8 +10,9 @@ import copy
 import logging
 
 
+from . import config
+
 from . import bot_main
-from .config import Config
 from .logger import LoggingHandler
 from . import http_handler
 
@@ -24,6 +25,7 @@ def reload(module):
     """Recursively reload a module.
 
     Simple recursive module reloader that reloads any submodules specified in the modules __reload__ attribute."""
+
     imp.reload(module)
     if "__reload__" in dir(module):
         for m in module.__reload__:
@@ -49,7 +51,7 @@ class App:
         self.logger.info("Starting BX...")
 
         # Initialize config
-        self.config = Config(self)
+        self.config = config.Config(self)
         self.bots = {}
 
         # HTTP Server
@@ -65,13 +67,19 @@ class App:
 
     def init(self):
         """Initialize the app."""
-        self.config.set_config_dir(os.path.join(self.app_path, "config"))
-        if not self.config.init():
+        if not self.setup_config():
             self.logger.error("Failed to initialize configuration.")
             return False
-        self.config.load()
         self.http_server.set_port(self.config.get_item("http")["port"])
         self.http_server.set_handler(self.handle_http_request)
+        return True
+
+    def setup_config(self):
+        self.config = config.Config(self)
+        self.config.set_config_dir(os.path.join(self.app_path, "config"))
+        if not self.config.init():
+            return False
+        self.config.load()
         return True
 
     def run(self):
@@ -123,10 +131,15 @@ class App:
         try:
             reload(http_handler)
             self._serialize()
+            self.config = None
+            reload(config)
+            self.setup_config()
             reload(bot_main)
             self._unserialize()
             return True
         except:
+            # Try to unserialize bots anyway
+            self._unserialize()
             self.logger.exception("Reboot failed!")
             return False
 
