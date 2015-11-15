@@ -1,0 +1,29 @@
+
+from bx import bot_module
+
+
+class AutoChanMode(bot_module.BotModule):
+    """Automatically maintain channel modes according to config."""
+
+    def on_event(self, event):
+        if event.name in ["irc_channel_modes_are", "irc_channel_modes_changed"]:
+            config_modes = self.bot.get_server_channel_modes(event.window.get_name())
+            self.logger.debug("config_modes: {}".format(config_modes))
+            if not config_modes:
+                return False
+            window_modes = event.window.get_modes()
+            self.logger.debug("window_modes: {}".format(window_modes))
+            # add = []
+            # remove = []
+                # for mode in config_modes:
+                    # if mode not in window_modes:
+                        # add.append(mode)
+            add = [mode for mode in config_modes if mode not in window_modes]
+            remove = [mode for mode in window_modes if mode not in config_modes]
+            if add:
+                event.window.change_modes(add)
+            if remove:
+                event.window.change_modes(remove, True)
+
+
+module_class = AutoChanMode
