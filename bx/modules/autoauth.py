@@ -7,9 +7,10 @@ class AutoAuth(bot_module.BotModule):
     """Automatically auths you if you're hostname is trusted."""
 
     def on_event(self, event):
-        if event.name == "bot_user_hostname_changed":
+        if event.name in ["bot_user_hostname_changed", "bot_user_online"]:
+            self.logger.debug("Autoauth event: {}".format(event.name))
             if not event.user.is_authed():
-                self.logger.debug("Autoauthing {} by hostname {}".format(event.user, event.user.hostname))
+                self.logger.debug("Autoauthing {} by hostname {}".format(event.user, event.user.get_hostname()))
                 event.user.auto_authenticate()
 
 module_class = AutoAuth
