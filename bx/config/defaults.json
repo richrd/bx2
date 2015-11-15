@@ -8,7 +8,13 @@
         "cmd_separator": "\u00a7",
         "cmd_throttle": 1.5,
         "send_throttle": 0.5,
-        "channels": {}
+        "log_limit": 100000,
+        "channels": {},
+        "aliases": {
+            "hl": "highlight",
+            "j": "join",
+            "p": "part"
+        }
     },
     "http": {
         "host": "localhost",
