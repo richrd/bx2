@@ -51,6 +51,11 @@ class Account:
     def get_filename(self):
         return self.filename
 
+    def get_server(self, name):
+        if not name in self.data["servers"].keys():
+            return False
+        return self.data["servers"][name]
+
     def get_servers(self):
         return self.data["servers"].keys()
 
@@ -69,7 +74,11 @@ class Account:
         return server in self.get_servers()
 
     def is_trusted_channel(self, server, channel):
-        pass
+        server = self.config.get_server(server)
+        if not server:
+            return False
+        print(self)
+        print(server)
 
     def add_hostname(self, hostname):
         self.get_hostnames().append(hostname)
