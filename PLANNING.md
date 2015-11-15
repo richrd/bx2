@@ -44,7 +44,7 @@
 * [X] auth
 > Log in to the bot with an existing username and password.
 
-* [ ] autochanmode
+* [X] autochanmode
 > Maintain channel modes (modes are defined in server channel config).
 
 * [X] autoop
@@ -62,10 +62,10 @@
 * [ ] clearlogs
 > Clear logs in a window. Clear all by default or clear messages since a time or duration.
 
-* [ ] commands
+* [X] commands
 > List the commands that the user has access to.
 
-* [ ] deauth
+* [X] deauth
 > Log out of the bot.
 
 * [X] deop
