@@ -29,7 +29,7 @@ class Run(bot_module.BotModule):
         if not run_user:
             win.send("User not found.")
             return False
-        
+
         run_window = self.bot.get_window(window)
         if not run_window:
             win.send("Window not found.")
@@ -41,8 +41,8 @@ class Run(bot_module.BotModule):
         if len(command) > 1:
             run_args = " ".join(command[1:])
         event = self.bot.create_event()
-        event.set_user(user)
+        event.set_user(run_user)
         event.set_window(run_window)
-        self.bot.run_command(run_command, run_args, event, run_user)
+        self.bot.run_command(run_command, run_args, event, user)
 
 module_class = Run
