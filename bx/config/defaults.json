@@ -9,11 +9,13 @@
         "cmd_throttle": 1.5,
         "send_throttle": 0.5,
         "log_limit": 100000,
+        "auto_send": [],
         "channels": {},
         "aliases": {
-            "hl": "highlight",
             "j": "join",
-            "p": "part"
+            "p": "part",
+            "hl": "highlight",
+            "cmds": "commands"
         }
     },
     "http": {

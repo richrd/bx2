@@ -190,8 +190,7 @@ class Config:
             self.logger.error("Failed to load default config file! ('{0}')".format(path))
             self.config = dict(self.defaults)
             return False
-        self.config = config
-        self.update(self.config, self.defaults)
+        self.config = helpers.merge(self.defaults.copy(), config)
         return True
 
     def load_servers(self):
