@@ -21,7 +21,7 @@
  * [X] Multi-server support
  * [X] Rebooting of bot(s) without losing connection
  * [X] Integrated HTTP server (for sending logs, providing API etc)
- * [ ] Remotely updating the bot from the github repository
+ * [X] Remotely updating the bot from the github repository
  * [ ] Support server passwords
  * [ ] Verify all core modules before reloading to avoid syntax error crashes
  * [ ] Automatically get a hostname with USERHOST
@@ -29,7 +29,7 @@
        > In early implementations of IRC this had to be hard-coded in the
        > client but there is now a de facto standard extension to the protocol
        > called ISUPPORT that sends this information to the client at connect
-       >time using numeric 005.
+       > time using numeric 005.
 
 ## Plugins
 
@@ -47,10 +47,10 @@
 * [ ] autochanmode
 > Maintain channel modes (modes are defined in server channel config).
 
-* [ ] autoop
+* [X] autoop
 > Automatically op trusted users (**How to define user and channel to auto op?**).
 
-* [ ] autorejoin
+* [X] autorejoin
 > Automatically rejoin a channel after kick.
 
 * [ ] broadcast
@@ -68,13 +68,16 @@
 * [ ] deauth
 > Log out of the bot.
 
+* [X] deop
+> Deop people on channel.
+
 * [ ] dropsend
 > Clear the remaining send message queue (data queued for sending to the server).
 
 * [X] help
 > Bot help command.
 
-* [ ] highlight
+* [X] highlight
 > Highlight everyone on current channel.
 
 * [X] join
@@ -83,10 +86,10 @@
 * [X] level
 > Show the permission level of the asking user (or a specified user).
 
-* [ ] logs
+* [X] logs
 > Get channel logs. Allows asking for specific channel (if sufficient privileges) and send logs as a HTTP link.
 
-* [ ] msg
+* [X] msg
 > Make the bot send a message to a user or channel
 
 * [ ] msgcount
@@ -98,25 +101,28 @@
 * [X] nick
 > Change bot nick.
 
+* [X] op
+> Op people on channel.
+
 * [X] part
 > Make the bot leave the current channel (or a specified channel).
 
 * [X] ping
 > ping the bot to see if it's alive
 
-* [ ] raw
+* [X] raw
 > Send raw data to IRC server.
 
 * [ ] reconnect
 > Reconnect to an irc server.
 
-* [ ] run
+* [X] run
 > Run a command as a specifi user on a channel in a certain IRC network.
 
-* [ ] topic
+* [X] topic
 > Change channel topic.
 
-* [ ] trustme
+* [X] trustme
 > Associate a user hostname with their account.
 
 * [X] url
@@ -180,34 +186,40 @@ Basic permissions are defined by an intiger. By default it ranges from 0 to 100.
 
 ### Bookkeeping
 
-* [ ] Bot
+* [X] Bot
     * [X] Own nick
-    * [ ] What channels are really joined (check kick & ban etc)
+    * [X] What channels are really joined (check kick etc)
 
-* [ ] User status (online/authed/last_action etc).
-    * [ ] online
-        * [ ] User must be set to online when:
-            * [ ] They are seen
-            * [ ] They perform an action
+* [X] User status (online/authed/last_action etc).
+    * [X] Online
+        * [X] When user renames to existing (offline) user two users exist with the same nick (
+        * [X] User must be set to online when:
+            * [X] They are seen
+            * [X] They perform an action
         * [X] User must be set offline when:
             * [X] They quit
             * [X] The bot gets disconnected (no chance of bookkeeping when not connected)
-    * [ ] authed
-        * [X] The user should be deauthed when they go offline
-        * [X] When the bot disconnects
-        * [ ] The user should be authed when their hostname
+    * [X] authed
+        * [X] The user should be deauthed when:
+            * [X] They go offline
+            * [X] When the bot disconnects
+        * [X] The user should be authed when their hostname is trusted or when they auth manually
 
-* [ ] Window status
-    * [ ] Users
+* [X] Window status
+    * [X] Users
         * [X] All users in a window must be cleared when:
             * [X] The bot parts that channel
             * [X] When the bot gets disconnected
-        * [ ] Modes
+        * [X] Modes
+        
     * [X] Channel modes
         * [X] Get modes on join
         * [X] Detect mode changes
-    * [ ] Channel topic
-
+    
+    * [X] Channel topic
+    * [X] Log records
+        * [X] Store selected events
+        * [X] Max amount of records TODO:use value from config
 
 ### HTTP Server
  * [ ] Should be running and accessible at all times
@@ -215,7 +227,7 @@ Basic permissions are defined by an intiger. By default it ranges from 0 to 100.
      * [ ] Automatic hierarchial routes should be provided by default
      * [ ] Custm routes should be able to be used too
  * [ ] Should provide good base template for HTML content
- * [ ] Should provide generic static resources (styles/js/images/etc)
+ * [X] Should provide generic static resources (e.g. styles, js, images etc.)
 
 
 ### Modules
@@ -250,6 +262,7 @@ Modules respond to their names as a commands, or any events they subscribe to.
      * cmd_prefix
      * cmd_separator
      * cmd_throttle
+     * log_limit
  * module_aliases
 
 ### Server config
