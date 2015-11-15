@@ -20,19 +20,23 @@ class Logs(bot_module.BotModule):
 
     def init(self):
         self.log_requests = {}
-        self.max_hits = 15
-        self.max_age = 120
+        self.max_hits = 20
+        self.max_age = 60*10  # 10 min
 
     def rand_id(self):
         return binascii.hexlify(os.urandom(8)).decode("utf-8")
 
     def run_command(self, win, user, data, caller=None):
         id = self.rand_id()
+        if data.lower() == "count":
+            win.send("This window has {} log records.".format(len(win.get_log())))
+            return True
         duration = helpers.str_to_seconds(data)
         if not duration:
             duration = 60*60  # 1 hour by default
         min_time = time.time() - duration
 
+        # TODO: add requester nick so it can be highlighted
         self.log_requests[id] = {
             "hits": 0,
             "window": win,

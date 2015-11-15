@@ -11,6 +11,8 @@ class Reboot(bot_module.BotModule):
 
     def run_command(self, win, user, data, caller=None):
         self.logger.debug("Trying to reboot bots!")
-        self.bot.app.reboot()
+        if not self.bot.app.reboot():
+            win.send("Reboot failed.")
+            return False
 
 module_class = Reboot
