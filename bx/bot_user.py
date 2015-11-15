@@ -1,5 +1,6 @@
 
 import time
+from . import bot_event
 
 
 class User:
@@ -76,6 +77,16 @@ class User:
             return 0
         return self.account.get_permission_level()
 
+    def get_trusted_channels(self):
+        if not self.account:
+            return []
+        return self.account.get_server_channels(self.bot.get_name())
+        
+    def is_trusted_channel(self, win):
+        if not isinstance(win, str):
+            win = win.get_name()
+        return win in self.get_trusted_channels()
+
     #
     # Setters
     #
@@ -84,7 +95,12 @@ class User:
         self.nick = nick
 
     def set_hostname(self, hostname):
+        old_hostname = self.hostname
         self.hostname = hostname
+        if old_hostname != self.hostname:
+            event = bot_event.Event(self.bot, "bot_user_hostname_changed")
+            event.set_user(self)
+            self.bot.trigger_event(event)
 
     def set_ident(self, ident):
         self.ident = ident
@@ -124,16 +140,21 @@ class User:
             self.set_online(1)
         self.last_active = time.time()
 
+    def on_authenticated(self):
+        event = bot_event.Event(self.bot, "bot_user_authed")
+        event.set_user(self)
+        self.bot.trigger_event(event)
+
     def on_event(self, event):
         # Skip all events that aren't this user
         if event.user != self:
             return False
 
-        if event.name == "on_quit":
+        if event.name == "irc_quit":
             self.set_online(0)
             self.set_quit_time(time.time())
             self.deauthenticate()
-        if event.name == "on_channel_topic_meta":
+        if event.name == "irc_channel_topic_meta":
             pass  # Avoid triggering on_action
         else:
             self.on_action()
@@ -146,6 +167,7 @@ class User:
         account = self.bot.app.config.authenticate_account(self, username, password)
         if account:
             self.account = account
+            self.on_authenticated()
         return account
 
     def deauthenticate(self):
@@ -158,6 +180,7 @@ class User:
         account = self.bot.app.config.get_account_by_hostname(self, self.get_hostname())
         if account:
             self.account = account
+            self.on_authenticated()
         return account
 
     def send(self, msg):
@@ -182,13 +205,15 @@ class User:
             "quit_reason": self.quit_reason,
             "last_active": self.last_active,
             "last_command": self.last_command,
-            "account": self.account,
+            "account": None,
+            # "account": self.account,
         }
         return serialized
 
     def _unserialize(self, serialized):
         self.nick = serialized["nick"]
-        self.hostname = serialized["hostname"]
+        self.hostname = ""  # Hack to enable auto-auth
+        # self.hostname = serialized["hostname"]
         self.ident = serialized["ident"]
         self.online = serialized["online"]
         self.created = serialized["created"]
