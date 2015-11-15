@@ -16,10 +16,10 @@ class LogRecord:
         self.nick = ""
         self.event = None
         self.name_map = {
-            "on_privmsg": "privmsg",
-            "on_channel_join": "join",
-            "on_channel_part": "part",
-            "on_quit": "quit",
+            "irc_privmsg": "privmsg",
+            "irc_channel_join": "join",
+            "irc_channel_part": "part",
+            "irc_quit": "quit",
         }
 
     def set_name(self, name):
@@ -87,6 +87,9 @@ class Window:
 
         # Message log
         self.log = []
+        
+        # Max log length
+        #self.log_length = 100000  # 100k records
 
         # Subscribe to all events
         self.bot.add_event_handler(self.on_event)
@@ -110,22 +113,30 @@ class Window:
     def get_log(self):
         return self.log
 
+    def get_log_limit(self):
+        return self.bot.config["log_limit"]
+
     def is_channel(self):
         return self.zone == irc_constants.ZONE_CHANNEL
 
     def is_query(self):
         return self.zone == irc_constants.ZONE_QUERY
 
+    def is_trusted(self, user):
+        return False
+
     def on_privmsg(self, event):
         self.add_log_record_from_event(event)
 
     def on_event(self, event):
-        if event.name == "on_privmsg":
+        if event.name == "irc_privmsg":
             if event.window == self:
                 self.on_privmsg(event)
 
     def add_log_record_from_event(self, event):
         # TODO: implement log limit
+        while len(self.log) > self.get_log_limit():
+            self.log.pop(0)
         record = LogRecord().parse_from_event(event)
         self.log.append(record)
 
@@ -160,6 +171,31 @@ class Window:
             self.log.append(msg)
 
 
+class Query(Window):
+    """Window representing an IRC query (one to one chat)."""
+    def __init__(self, bot, name):
+        Window.__init__(self, bot, name)
+        self.zone = irc_constants.ZONE_QUERY
+        self.user = self.bot.get_user(name)
+
+    def get_users(self):
+        return [self.user]
+
+    def notice(self, msg):
+        self.bot.irc.notice(self.get_name(), msg)
+
+    def _serialize(self):
+        serialized = Window._serialize(self)
+        serialized["zone"] = self.zone
+        serialized["nick"] = self.user.get_nick()
+        return serialized
+
+    def _unserialize(self, serialized):
+        Window._unserialize(self, serialized)
+        self.zone = serialized["zone"]
+        self.user = self.bot.get_user(serialized["nick"])
+
+
 class Channel(Window):
     """Window representing an IRC channel."""
     def __init__(self, bot, name=None):
@@ -187,10 +223,15 @@ class Channel(Window):
         return self.modes
 
     def get_users(self):
-        return self.users.keys()
+        return list(self.users.keys())
 
     def get_user_modes(self, user):
         return self.users[user]["modes"]
+
+    def is_trusted(self, user):
+        if not user.is_authed():
+            return False
+        return False
 
     def set_current_modes(self, modes):
         self.modes = modes
@@ -233,6 +274,41 @@ class Channel(Window):
         if mode in self.get_user_modes(user):
             self.users[user]["modes"].pop(self.users[user]["modes"].index(mode))
 
+    def change_topic(self, topic):
+        self.bot.irc.set_channel_topic(self.get_name(), topic)
+
+    def give_voice(self, users):
+        if not isinstance(users, list):
+            users = [users]
+        nickmodes =  [(user.get_nick(), "v") for user in users]
+        self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes)
+
+    def give_op(self, users):
+        if not isinstance(users, list):
+            users = [users]
+        nickmodes =  [(user.get_nick(), "o") for user in users]
+        self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes)
+
+    def take_voice(self, users):
+        if not isinstance(users, list):
+            users = [users]
+        nickmodes =  [(user.get_nick(), "v") for user in users]
+        self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes, False)
+
+    def take_op(self, users):
+        if not isinstance(users, list):
+            users = [users]
+        nickmodes =  [(user.get_nick(), "o") for user in users]
+        self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes, False)
+
+    def has_voice(self, user):
+        modes = self.get_user_modes(user)
+        return irc_constants.MODE_VOICE in modes
+
+    def has_op(self, user):
+        modes = self.get_user_modes(user)
+        return irc_constants.MODE_OP in modes
+
     def has_user(self, user):
         return user in self.users.keys()
 
@@ -274,43 +350,43 @@ class Channel(Window):
 
     def on_event(self, event):
         Window.on_event(self, event)
-        if event.name == "on_quit":
+        if event.name == "irc_quit":
             if event.user in self.get_users():
                 self.add_log_record_from_event(event)
             self.remove_user(event.user)
-        if event.name == "on_disconnect":
+        if event.name == "irc_disconnect":
             # Clear all users on disconnect (cant do bookkeeping)
             self.clear_state()
         # Event that requires the current channel
         if event.window == self:
-            if event.name == "on_i_joined":
+            if event.name == "irc_i_joined":
                 self.joined = 1
-            if event.name == "on_channel_join":
+            if event.name == "irc_channel_join":
                 self.add_user(event.user)
                 self.add_log_record_from_event(event)
-            elif event.name in ["on_channel_part", "on_channel_kick"]:
-                if event.name != "on_channel_kick":
+            elif event.name in ["irc_channel_part", "irc_channel_kick"]:
+                if event.name != "irc_channel_kick":
                     self.add_log_record_from_event(event)
                 self.remove_user(event.user)
                 if event.user == self.bot.get_bot_user():
                     event.window.clear_state()
-            elif event.name == "on_channel_has_users":
+            elif event.name == "irc_channel_has_users":
                 # Clear all users since this event declares them
                 self.clear_users()
-                self.logger.debug("on_channel_has_users {}".format(event.irc_args["users"]))
+                self.logger.debug("irc_channel_has_users {}".format(event.irc_args["users"]))
                 for user_item in event.irc_args["users"]:
                     user = self.bot.get_user_create(user_item[0])
                     user.set_online(1)
                     self.add_user(user, user_item[1])
-            elif event.name == "on_channel_topic_is":
+            elif event.name == "irc_channel_topic_is":
                 self.topic = event.data
-            elif event.name == "on_channel_topic_changed":
+            elif event.name == "irc_channel_topic_changed":
                 self.topic = event.data
-            elif event.name == "on_channel_modes_are":
+            elif event.name == "irc_channel_modes_are":
                 self.set_current_modes(event.modes)
-            elif event.name == "on_channel_modes_changed":
+            elif event.name == "irc_channel_modes_changed":
                 self.set_changed_modes(event.modes)
-            elif event.name == "on_channel_user_modes_changed":
+            elif event.name == "irc_channel_user_modes_changed":
                 self.set_changed_user_modes(event.modes)
 
     def _serialize(self):
@@ -339,28 +415,3 @@ class Channel(Window):
         self.users = {}
         for user in serialized["users"]:
             self.users[self.bot.get_user(user[0]["nick"])] = user[1]
-
-
-class Query(Window):
-    """Window representing an IRC query (one to one chat)."""
-    def __init__(self, bot, name):
-        Window.__init__(self, bot, name)
-        self.zone = irc_constants.ZONE_QUERY
-        self.user = self.bot.get_user(name)
-
-    def get_users(self):
-        return [self.user]
-
-    def notice(self, msg):
-        self.bot.irc.notice(self.get_name(), msg)
-
-    def _serialize(self):
-        serialized = Window._serialize(self)
-        serialized["zone"] = self.zone
-        serialized["nick"] = self.user.get_nick()
-        return serialized
-
-    def _unserialize(self, serialized):
-        Window._unserialize(self, serialized)
-        self.zone = serialized["zone"]
-        self.user = self.bot.get_user(serialized["nick"])

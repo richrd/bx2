@@ -92,7 +92,7 @@ class BotModule:
             u.close()
             return data
         except Exception:
-            self.logger.warning("Failed to get url '{}'".format(url))
+            self.logger.exception("Failed to get url '{}'".format(url))
             return False
 
     def _is_allowed_window(self, win):
@@ -101,6 +101,8 @@ class BotModule:
         return False
 
     def _is_allowed_user(self, user):
+        if not user:
+            return False
         if user.get_permission_level() < self.level:
             return False
         return True
@@ -136,6 +138,10 @@ class BotModule:
         if not self._is_allowed_window(win):
             win.send("you can't do that here, use privmsg")
             return False
+        if self._is_allowed_user(caller):
+            # Callers have higher priority (run stuff on behalf of other users. only available to admins.)
+            self._safe_run(win, user, data, caller)
+            return True
         if self._is_allowed_user(user):
             if self._is_throttled(user):
                 if self._should_warn_throttle(user):
@@ -152,5 +158,7 @@ class BotModule:
     def _safe_run(self, win, user, data, caller=None):
         try:
             self.run_command(win, user, data, caller)
+            return True
         except:
             self.logger.exception("Failed to run module {}".format(self.name))
+            return False

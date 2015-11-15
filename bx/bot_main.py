@@ -153,6 +153,9 @@ class Bot:
     def get_nick(self):
         """Return the bots current nick."""
         return self.irc.get_nick()
+        
+    def get_server_channels(self):
+        return self.config["channels"].keys()
 
     def get_bot_user(self):
         """Return the user object of the bot."""
@@ -253,45 +256,60 @@ class Bot:
             return msg[len(prefix):]
         return False
 
-    def run_command(self, command, args, event):
+    def run_command(self, command, args, event, caller=None):
+        command = self.get_command_by_alias(command)
         if command in self.modules.keys():
             module = self.modules[command]
-            module._execute(event.window, event.user, args)
+            module._execute(event.window, event.user, args, caller)
+
+    def get_command_by_alias(self, alias):
+        if alias in self.config["aliases"]:
+            return self.config["aliases"][alias]
+        return alias
 
     def create_message_from_event(self, event):
         msg = bot_message.Message(event.irc_args["nick"], event.irc_args["data"], event.irc_args["target"])
         return msg
+
+    def create_event(self, name=None):
+        return bot_event.Event(self, name)
 
     def handle_event(self, event):
         """Handle a single event object.
 
         Many events are handled by windows, so we don't have to do everything here.
         """
-        if event.name == "on_connected":
+        if event.name == "irc_connected":
             self.on_connected()
-        elif event.name == "on_disconnect":
+        elif event.name == "irc_disconnect":
             self.on_disconnect()
-        elif event.name == "on_connect_throttled":
+        elif event.name == "irc_connect_throttled":
             self.on_connect_throttled()
-        elif event.name == "on_irc_ready":
+        elif event.name == "irc_ready":
             self.on_irc_ready()
-        elif event.name == "on_i_joined":
+        elif event.name == "irc_i_joined":
             # Aquire channel modes
             event.window.ask_modes()
-        elif event.name in ["on_parse_nick_hostname", "on_whois_hostname"]:
+        elif event.name == "irc_privmsg":
+            self.on_privmsg(event)
+        elif event.name in ["irc_parse_nick_hostname", "irc_whois_hostname"]:
             user = self.get_user(event.irc_args["nick"])
             if not user:
                 user = self.create_user(event.irc_args["nick"])
+            # if event.irc_args["hostname"] != user.get_hostname():
             user.set_hostname(event.irc_args["hostname"])
-        elif event.name == "on_privmsg":
-            self.on_privmsg(event)
-        if event.name == "on_nick_changed":
-            if event.user:
-                event.user.set_nick(event.irc_args["new_nick"])
-            else:
+        if event.name == "irc_nick_changed":
+            if not event.user:
                 self.logger.warning("Unknown user '{}' is now '{}'".format(
                     event.irc_args["nick"], event.irc_args["new_nick"])
                 )
+            else:
+                old_user = self.get_user(event.irc_args["new_nick"])
+                if old_user:
+                    # This isn't possible if the new nick
+                    # exists so we just remove the old user
+                    self.remove_user(old_user)
+                event.user.set_nick(event.irc_args["new_nick"])
         self.trigger_event_handlers(event)
 
     def add_event_handler(self, callback):
@@ -310,6 +328,9 @@ class Bot:
         except Exception:
             self.logger.exception("Failed to trigger module events!")
 
+    def trigger_event(self, event):
+        self.trigger_event_handlers(event)
+
     def auto_join(self):
         """Join channels specified in server config."""
         self.irc.join_channels(self.config["channels"].keys())
@@ -322,6 +343,15 @@ class Bot:
         user = bot_user.User(self, nick)
         self.users.append(user)
         return user
+
+    def remove_user(self, user):
+        """Remove a user by nick or object."""
+        if isinstance(user, str):
+            user = self.get_user(user)
+        if user:
+            del self.users[self.users.index(user)]
+            return True
+        return False
 
     def create_window(self, name):
         """Create a window from nick or channel name."""
