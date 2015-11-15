@@ -347,6 +347,7 @@ class IRCClient:
         self.privmsg(dest, "\x01ACTION {}\x01".format(msg))
 
     def set_channel_user_modes(self, chan, nickmodes, operation=True):
+        """Set user modes on channel."""
         if operation:
             modes = "+"
         else:
@@ -381,7 +382,7 @@ class IRCClient:
         self.irc_connected = False
         self._dispatch_event()
 
-    def on_irc_ready(self):
+    def on_ready(self):
         self._dispatch_event()
 
     def on_receive(self, data):
@@ -851,17 +852,23 @@ class IRCClient:
             elif numeric in [251, 252, 253, 254, 255]:
                 self.on_server_info(" ".join(parts[3:]))
             # WHOIS responses
-            elif numeric in [311]:         # Parse whois responses
+            elif numeric in [311, 312, 319, ]:         # Parse whois responses
                 nick = parts[3]
                 if numeric == 311:
                     hostname = parts[4] + "@" + parts[5]
                     self.on_whois_hostname(nick, hostname)
+                if numeric == 312:
+                    # TODO: Whois server
+                    pass
+                if numeric == 319:
+                    # TODO: Whois channels
+                    pass
             # MOTD (Message Of The Day)
             elif numeric in [375, 372]:    # Start of MOTD, First line of MOTD
                 self.on_motd(text_data)
             elif numeric in [376, 422]:    # End of MOTD, No MOTD
                 self.on_end_motd()
-                self.on_irc_ready()
+                self.on_ready()
             # Channel specific numeric commands
             elif numeric in [324, 329, 332, 333, 353, 366, 473]:  # Channel numerics
                 channel = parts[3]
