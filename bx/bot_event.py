@@ -31,8 +31,16 @@ class Event:
         self.irc_event = None
         self.irc_args = {}
 
+    def set_user(self, user):
+        self.user = user
+
+    def set_window(self, window):
+        self.window = window
+
     def _parse_from_irc_event(self, name, irc_args):
         """Parse IRC event data and store it."""
+        if name.startswith("on_"):
+            name = "irc_" + name[3:]
         self.name = name
         self.irc_args = irc_args
         # Store the correct event time
