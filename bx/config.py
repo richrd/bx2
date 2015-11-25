@@ -40,6 +40,9 @@ class Account:
     def set_hostnames(self, hostnames):
         self.data["hostnames"] = hostnames
 
+    def set_last_seen(self, last_seen):
+        self.data["last_seen"] = last_seen
+
     #
 
     def get_data(self):
@@ -67,6 +70,9 @@ class Account:
 
     def get_hostnames(self):
         return self.data["hostnames"]
+
+    def get_last_seen(self):
+        return self.data["last_seen"]
 
     #
 
