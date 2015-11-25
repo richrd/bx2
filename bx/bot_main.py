@@ -125,11 +125,14 @@ class Bot:
             if not module:
                 self.logger.warning("Failed to load module '{}'".format(name))
                 continue
-            cls = module.module_class
-            inst = cls(self)
-            options = cls.declare()
-            self.set_module_options(name, inst, options)
-            self.modules[name] = inst
+            try:
+                cls = module.module_class
+                inst = cls(self)
+                options = cls.declare()
+                self.set_module_options(name, inst, options)
+                self.modules[name] = inst
+            except:
+                self.logger.exception("Failed to load module '{}'!".format(name))
 
     def set_module_options(self, name, instance, options):
         """Set module options on a module instance.
@@ -176,7 +179,8 @@ class Bot:
     def get_user(self, nick):
         """Return a user by nick."""
         for user in self.users:
-            if user.get_nick() == nick:
+            # if user.get_nick() == nick:
+            if user.get_nick().lower() == nick.lower():
                 return user
         return False
 
@@ -297,7 +301,7 @@ class Bot:
         elif event.name == "irc_ready":
             self.on_irc_ready()
         elif event.name == "irc_i_joined":
-            # Aquire channel modes
+            # Aquire channel modes. Ensures the bot knows the modes of channels it joins.
             event.window.ask_modes()
         elif event.name == "irc_privmsg":
             self.on_privmsg(event)
@@ -305,7 +309,6 @@ class Bot:
             user = self.get_user(event.irc_args["nick"])
             if not user:
                 user = self.create_user(event.irc_args["nick"])
-            # if event.irc_args["hostname"] != user.get_hostname():
             user.set_hostname(event.irc_args["hostname"])
         if event.name == "irc_nick_changed":
             if not event.user:
