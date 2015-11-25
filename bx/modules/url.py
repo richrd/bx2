@@ -119,12 +119,18 @@ class Url(bot_module.BotModule):
         data = response.read(50000)
         if data:
             self.logger.debug("Got url data.")
-        data = data.decode(charset)
-        data = html.parser.HTMLParser().unescape(data)
+        if charset:
+            data = data.decode(charset)
+        else:
+            self.logger.warning("No charset, using UTF-8!")
+            data = data.decode("utf-8")
+        try:
+            data = html.parser.HTMLParser().unescape(data)
+        except:
+            self.logger.exception("Failed to unescape HTML!")
 
         # Find title, return result if found
         title = self.find_title(data)
-        self.logger.debug("title: {}".format(title))
         if not title:
             return False
         return title
