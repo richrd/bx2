@@ -66,6 +66,7 @@ class IRCClient:
         # Exclude event log
         self.exclude_events = [
             "on_ping",
+            "on_pong",
             "on_i_joined",
             "on_channel_has_users",
             "on_nick_in_use",
@@ -113,7 +114,7 @@ class IRCClient:
         # Time of last sent PONG reply
         self.last_pong_time = None
         # Minimum time of inactivity before pinging the server (to check that the connection)
-        self.ping_after = 90  # 1.5 minutes
+        self.ping_after = 120  # 2 minutes
         # Last time we've pinged the server (resets after the pong response)
         self.pinged_server = False
         # Maximum time of inactivity before reconnecting to the server
@@ -222,7 +223,8 @@ class IRCClient:
                 return False
 
     def send(self, data):
-        self.debug_log("send:", data)
+        if len(data) > 3 and data[:4] not in ["PING", "PONG"]:
+            self.debug_log("send:", data)
         if len(data) > 510:
             self.debug_log("send(): data too long!")
         data += "\r\n"
@@ -410,7 +412,7 @@ class IRCClient:
         self._dispatch_event()
         self.send("PONG {}".format(data))
 
-    def on_pong(self):
+    def on_pong(self, data):
         """Callend when a PONG event is received."""
         self._dispatch_event()
         self.pinged_server = False
@@ -628,7 +630,7 @@ class IRCClient:
             # try:
             # data = left
             # data = left.decode(self.outgoing_encoding)
-            data = bytes(data, self.outgoing_encoding)
+            data = bytes(left, self.outgoing_encoding)
             sent = self.socket.send(data)
             if len(left) == sent:
                 return True
@@ -764,7 +766,7 @@ class IRCClient:
             nick, hostname = self.parse_nick_host(line)
             target = parts[2]  # Channel or user
             if command == "pong":
-                self.on_ping(text_data)
+                self.on_pong(text_data)
             elif command == "join":
                 if text_data is not False:
                     channel = text_data
