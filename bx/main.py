@@ -55,11 +55,11 @@ class App:
         self.bots = {}
 
         # HTTP Server
-        self.http_server = pyco_http.PycoHTTP()
-        self.http_server.set_default_header("content-type", "text/plain")
+        self.http_server = None
 
         # HTTP Handler
-        self.http_handler = http_handler.HTTPHandler(self)
+        self.http_handler = None
+        # http_handler.HTTPHandler(self)
 
         # Stores serialized bots that have been stopped. Used when 'rebooting' the bots.
         # The only thing that is NOT serialized is the IRCClient instances.
@@ -70,8 +70,7 @@ class App:
         if not self.setup_config():
             self.logger.error("Failed to initialize configuration.")
             return False
-        self.http_server.set_port(self.config.get_item("http")["port"])
-        self.http_server.set_handler(self.handle_http_request)
+        self.setup_http()
         return True
 
     def setup_config(self):
@@ -81,6 +80,15 @@ class App:
             return False
         self.config.load()
         return True
+
+    def setup_http(self):
+        self.http_handler = http_handler.HTTPHandler(self)
+        self.http_server = pyco_http.PycoHTTP()
+        self.http_server.set_default_header("content-type", "text/plain")
+        self.http_server.set_port(self.config.get_item("http")["port"])
+        self.http_server.set_handler(self.handle_http_request)
+        if self.running:
+            self.http_server.start()
 
     def run(self):
         """Run the app.
@@ -122,19 +130,33 @@ class App:
             for bot in self.bots.values():
                 bot.mainloop()
             # FIXME: This has performance issues. Checking for connections wastes time :(
-            self.http_server.serve()
+            if self.http_server:
+                if self.http_server.running:
+                    try:
+                        self.http_server.serve()
+                    except:
+                        self.logger.exception("Failed to serve HTTP!")
             time.sleep(0.001)
 
     def reboot(self):
         """Stores a snapshot of all bots, shuts down them down and reloads them with the snapshots."""
         self.logger.debug("Rebooting bots!")
         try:
+            # HTTP
+            self.http_server = None
+            self.http_handler = None
+            reload(pyco_http)
             reload(http_handler)
+            self.setup_http()
+            # Serialize
             self._serialize()
+            # Config
             self.config = None
             reload(config)
             self.setup_config()
+            # Reload the bot and its submodules
             reload(bot_main)
+            # Unserialize
             self._unserialize()
             return True
         except:
