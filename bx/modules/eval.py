@@ -1,4 +1,5 @@
 
+from bx import helpers
 from bx import bot_module
 
 
