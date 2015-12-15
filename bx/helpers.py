@@ -1,6 +1,8 @@
 
 import re
-import types 
+import json
+import types
+import random
 import datetime
 
 
@@ -84,3 +86,72 @@ def replace_url_to_link(value):
 
 def format_timestamp(stamp, format="%Y-%m-%d %H:%M:%S"):
     return datetime.datetime.fromtimestamp(stamp).strftime(format)
+
+
+# HSV values in [0..1]
+# returns [r, g, b] values from 0 to 255
+def hsv_to_rgb(h, s, v):
+  h_i = int(h*6)
+  f = h*6 - h_i
+  p = v * (1 - s)
+  q = v * (1 - f*s)
+  t = v * (1 - (1 - f) * s)
+  if h_i == 0:
+      r, g, b = v, t, p
+  if h_i == 1:
+      r, g, b = q, v, p
+  if h_i == 2:
+      r, g, b = p, v, t
+  if h_i == 3:
+      r, g, b = p, q, v
+  if h_i == 4:
+      r, g, b = t, p, v
+  if h_i == 5:
+      r, g, b = v, p, q
+  return (int(r*256), int(g*256), int(b*256))
+
+
+def generate_colors(n):
+    # use golden ratio
+    golden_ratio_conjugate = 0.618033988749895
+    # h = rand # use random start value
+    h = random.random()  # random start value
+    i = 0
+    colors = []
+    while i < n:
+        h += golden_ratio_conjugate
+        h = h % 1
+        colors.append(hsv_to_rgb(h, 0.5, 0.95))
+        i += 1
+    return colors
+
+
+def store_json(file, data):
+    f = open(file, "w")
+    f.write(json.dumps(data))
+    f.close()
+
+
+def load_json(file):
+    f = open(file)
+    data = f.read()
+    f.close()
+    return json.loads(data)
+
+
+def send_all_to_socket(self, data, sock):
+    # TODO: Might want to check irc_connected and irc_running before trying to send
+    left = data
+    while left != "":
+        # try:
+        # data = left
+        # data = left.decode(self.outgoing_encoding)
+        data = bytes(data, self.outgoing_encoding)
+        sent = sock.send(data)
+        if len(left) == sent:
+            return True
+        left = left[sent:]
+        # except:
+        #     self.debug_log("send_all_to_socket errored")
+        #     return False
+    return False

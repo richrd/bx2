@@ -146,6 +146,12 @@ class Window:
 
     def send(self, msg):
         self.privmsg(msg)
+        record = LogRecord()
+        record.set_name("privmsg")
+        record.set_nick(self.bot.get_bot_user().get_nick())
+        record.set_data(str(msg))
+        self.log.append(record)
+
 
     def privmsg(self, msg):
         self.bot.irc.privmsg(self.get_name(), msg)
@@ -229,8 +235,11 @@ class Channel(Window):
         return self.users[user]["modes"]
 
     def is_trusted(self, user):
+        self.logger.debug("Checking user: {}".format(user))
         if not user.is_authed():
             return False
+        if self.get_name() in user.account.get_server_channels(self.bot.get_name()):
+            return True
         return False
 
     def set_current_modes(self, modes):

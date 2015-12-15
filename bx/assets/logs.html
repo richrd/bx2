@@ -1,5 +1,5 @@
 <!doctype html>
-<body>
+<html>
     <head>
         <title>$title</title>
         <meta charset="utf-8">
@@ -17,12 +17,17 @@
                 </header>
             </div>
             <div id="middle">
-                <div class="log-listing">
+                <div class="controls">
+                    <button id="log-toggle-meta">Toggle join/part/quit</button>
+                    <button id="log-toggle-colors">Toggle nick colors</button>
+                </div>
+                <div class="log-records">
                     $records
                 </div>
             </div>
             <div id="bottom">
             </div>
         </div>
+        <script src="/assets/logs.js"></script>
     </body>
-</body>
+</html>

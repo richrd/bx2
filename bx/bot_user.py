@@ -1,5 +1,7 @@
 
 import time
+import logging
+
 from . import bot_event
 
 
@@ -26,6 +28,8 @@ class User:
         self.last_command = None
 
         self.account = None
+
+        self.logger = logging.getLogger("{}.{}".format(__name__, self.nick))
 
         # Listen to all bot events
         self.bot.add_event_handler(self.on_event)
@@ -138,6 +142,9 @@ class User:
         self.bot.trigger_event(event)
 
     def on_offline(self):
+        if self.account:
+            self.account.set_last_seen(time.time())
+            self.account.store()
         self.account = None
         event = self.bot.create_event("bot_user_offline")
         event.set_user(self)
@@ -158,12 +165,15 @@ class User:
         if event.user != self:
             return False
         if event.name == "irc_quit":
+            self.logger.debug("User {} quit.".format(event.user))
             self.set_online(0)
             self.set_quit_time(time.time())
             self.deauthenticate()
-        if event.name == "irc_channel_topic_meta":
+        elif event.name == "irc_channel_topic_meta":
             pass  # Avoid triggering on_action
-        else:
+        elif event.name.startswith("irc_"):
+            # Check for irc event to avoid triggering actions for bot events.
+            #self.logger.debug("User {} on_action: {}.".format(event.user, event.name))
             self.on_action()
 
     #
@@ -179,6 +189,8 @@ class User:
 
     def deauthenticate(self):
         if self.is_authed():
+            self.account.set_last_seen(time.time())
+            self.account.store()
             self.account = None
             return True
         return False

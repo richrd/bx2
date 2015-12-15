@@ -17,15 +17,36 @@ a {
     padding: 1em .6em;
 }
 
+button {
+    background: none;
+    color:inherit;
+    border: 1px solid rgba(30,30,30,0.3);
+    border-radius: 4px;
+    padding: .5em 1em;
+    background: rgba(30,30,30,0.3);
+    color: rgba(230,230,230,.7);
+}
+
+/*
+ * Helpers
+ */
+.hidden {
+    display: none;
+}
+.colorinherit {
+    color: inherit !important;
+}
+
+
 /*
  * Logging output
  */
-.log-listing .divider,
-.log-listing .record {
+.log-records .divider,
+.log-records .record {
     padding: .4em .5em;
     border-radius: 3px;
 }
-.log-listing .divider {
+.log-records .divider {
     text-align: center;
     padding: .5em .5em;
     margin-top:1em;
@@ -33,39 +54,51 @@ a {
     opacity: .7;
     background-color:rgba(0, 0, 0, .3);
 }
-.log-listing .record .span {
+.log-records .record .span {
     display: inline-block;
-}
-.log-listing .record:nth-child(odd) {
+} 
+.log-records .record:nth-child(odd) {
     background-color: rgba(180, 180, 180, .03);
 }
-.log-listing .record .time {
-    margin-right: 1em;
+.log-records .record .time {
+    /*margin-right: 1em;*/
     opacity: .4;
     font-size: .9em;
 }
-.log-listing .record .nick {
+.log-records .record .nick {
     min-width: 100px;
     border-right:1px solid #2A2A2A;
+    border-right:1px solid rgba(25,25,25,.4);
     padding-right:.5em;
     margin-right:.5em;
 }
-.log-listing .record.privmsg .nick {
+.log-records .record.privmsg .nick {
     color: #CFECFF;
 }
-.log-listing .record.privmsg .message {
+/*.log-records .record.highlight .message {*/
+.log-records .record.highlight {
+    color: #DDFCFF !important;
+    box-shadow: inset 0 0 32px 14px rgba(108, 240, 255, 0.10);
+}
+.log-records .record.privmsg .message {
     color: inherit;
     line-height: 1.3;
 }
-.log-listing .record a {
+.log-records .record a {
     word-break: break-all;
 }
-.log-listing .record.join {
+.log-records .record.highlight span.highlight {
+    text-shadow: 0 0 15px rgba(108, 240, 255, 0.57);
+}
+.log-records .record.join {
     color: #afa;
+    /*box-shadow: inset 0 0 32px 14px rgba(170, 255, 170, 0.08);*/
 }
-.log-listing .record.part {
+.log-records .record.part {
     color: #F7A677;
+    /*box-shadow: inset 0 0 32px 14px rgba(255, 162, 108, 0.09);*/
 }
-.log-listing .record.quit {
+.log-records .record.quit {
     color: #FF6373;
+    /*box-shadow: inset 0 0 32px 14px rgba(255, 99, 115, 0.13);*/
 }

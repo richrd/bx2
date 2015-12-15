@@ -94,6 +94,8 @@ class HTTPHandler:
         parts = request.get_path_list()
         if not parts[-1]:
             parts.pop(-1)
+        if not parts:
+            return
         if parts[0] in self.file_routes.keys():
             return self.handle_file_request(request)
 
