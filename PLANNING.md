@@ -92,9 +92,6 @@
 * [X] msg
 > Make the bot send a message to a user or channel
 
-* [ ] msgcount
-> Show log size for window.
-
 * [ ] newpass
 > Change user password.
 
