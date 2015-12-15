@@ -40,7 +40,8 @@ class PycoHTTP:
         self.max_queued_conns = 5
         self.max_request_len = 2048  # 2kb max request size
         self.select_timeout = 0.001
-        self.socket_timeout = 0.05
+        self.socket_timeout = 0.1
+        self.socket_timeout = 2
         self.headers = {
             "Server": "PycoHTTP",
             "Connection": "close",
@@ -228,7 +229,36 @@ class PycoHTTP:
 
         # Send the entire response
         # FIXME: may want to check for success and retry when necessary
-        conn.sendall(data.encode("utf-8"))
+        i = 1
+        while i < 11:
+            self.log("Trying to respond with data #{}".format(i))
+            # try:
+            if self.send_all_to_socket(data.encode("utf-8"), conn):
+             # conn.sendall(data.encode("utf-8")) is None:
+                return True
+            # except:
+                # self.log("Attempt #{} failed...".format(i))
+            i += 1
+        self.log("Send failed!")
+        return False
+
+    def send_all_to_socket(self, data, sock):
+        left = data
+        while left != "":
+            # try:
+            data = left
+            # data = left.decode(self.outgoing_encoding)
+            # data = bytes(left, "UTF-8")
+            # data = bytes(left, self.outgoing_encoding)
+            sent = sock.send(data)
+            if len(left) == sent:
+                return True
+            left = left[sent:]
+            # except:
+            #     self.debug_log("send_all_to_socket errored")
+            #     return False
+        return False
+
 
     def handle_connection(self, conn, addr):
         """Handle a HTTP connection."""
