@@ -209,7 +209,9 @@ class Config:
         for item in server_configs:
             server = item[1]
             defaults = dict(self.config["server"])
-            self.servers[server["name"]] = self.update(server, defaults)
+            conf = helpers.merge(defaults.copy(), server)
+            self.servers[server["name"]] = conf
+
         return True
 
     def load_accounts(self):

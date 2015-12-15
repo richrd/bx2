@@ -109,6 +109,7 @@ class Bot:
         """Set up the IRC client settings."""
         self.irc.set_host(self.config["host"])
         self.irc.set_port(self.config["port"])
+        self.irc.set_ssl(self.config["ssl"])
         self.irc.set_nick(self.config["nick"])
         self.irc.set_ident(self.config["ident"])
         self.irc.set_realname(self.config["realname"])
@@ -179,7 +180,6 @@ class Bot:
     def get_user(self, nick):
         """Return a user by nick."""
         for user in self.users:
-            # if user.get_nick() == nick:
             if user.get_nick().lower() == nick.lower():
                 return user
         return False

@@ -9,6 +9,7 @@ import sys
 import time
 import select
 import socket
+import ssl
 import inspect
 import logging
 import traceback
@@ -31,6 +32,7 @@ class IRCClient:
         # Server details
         self.host = host
         self.port = port
+        self.ssl = False
 
         # User info defaults
         self.default_nick = nick
@@ -154,6 +156,9 @@ class IRCClient:
     def set_port(self, port):
         self.port = port
 
+    def set_ssl(self, ssl):
+        self.ssl = ssl
+
     def set_nick(self, nick):
         self.current_nick = nick
 
@@ -195,7 +200,12 @@ class IRCClient:
 
     def connect(self):
         self.irc_running = 1
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if self.ssl:
+            self.socket = ssl.wrap_socket(sock)
+        else:
+            self.socket = sock
+
         self.socket.settimeout(self.socket_timeout)
         self.debug_log("Connecting to " + self.host + ":" + str(self.port) + "...")
         try:
