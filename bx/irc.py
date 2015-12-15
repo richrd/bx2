@@ -939,6 +939,7 @@ class IRCClient:
         serialized = {
             "host": self.host,
             "port": self.port,
+            "ssl": self.ssl,
             "default_nick": self.default_nick,
             "default_realname": self.default_realname,
             "default_ident": self.default_ident,
@@ -973,6 +974,7 @@ class IRCClient:
     def _unserialize(self, serialized):
         self.host = serialized["host"]
         self.port = serialized["port"]
+        self.ssl = serialized["ssl"]
         self.default_nick = serialized["default_nick"]
         self.default_realname = serialized["default_realname"]
         self.default_ident = serialized["default_ident"]
