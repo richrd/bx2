@@ -13,7 +13,6 @@ class BTC(bot_module.BotModule):
             "bitstamp": "http://www.bitstamp.net/api/ticker/",
         }
         self.cache_max_age = 60*2   # cache results for 2 minutes
-        self.cache_max_age = 2   # FIXME: cache results for 2 seconds
         self.cache = {}
         self.source = "bitstamp"
 
