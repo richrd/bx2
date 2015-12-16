@@ -31,9 +31,9 @@ class Help(bot_module.BotModule):
             "To see what commands are available use 'cmds'",
             "and to see what a command does, use 'help command'.",
             "You can login with 'auth' and logout with 'deauth'. Ask the bot owner for an account.",
-            "To check your permission level, use 'perm'.",
+            "To check your permission level, use 'level'.",
             "To ask me to remember your account, use 'trustme'.",
-            "Check out the code @ github: https://github.com/richrd/bx2",
+            "Check out the code @ GitHub: https://github.com/richrd/bx2",
             "Peace.",
             ]
         for line in lines:
