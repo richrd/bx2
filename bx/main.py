@@ -127,8 +127,11 @@ class App:
     def mainloop(self):
         """Run mainloops for all bots."""
         while self.running:
-            for bot in self.bots.values():
-                bot.mainloop()
+            try:
+                for bot in self.bots.values():
+                    bot.mainloop()
+            except:
+                self.logger.exception("Failed to iterate bots!")
             # FIXME: This has performance issues. Checking for connections wastes time :(
             if self.http_server:
                 if self.http_server.running:
