@@ -251,6 +251,8 @@ class IRCClient:
             sockl = [self.socket]
             readable, writable, errored = select.select(sockl, sockl, sockl, self.select_interval)
             time.sleep(self.select_interval)  # TODO: do we really need this?
+        except KeyboardInterrupt:
+            raise
         except (socket.error) as err:
             self.debug_log("mainloop()", "select error:", socket.error, err)
             return False
@@ -319,6 +321,8 @@ class IRCClient:
         self.send("NICK {}".format(nick))
 
     def join_channels(self, channels, keys=[]):
+        if not channels:
+            return False
         if isinstance(channels, str):
             channels = [channels]
         chanlist = ",".join(channels)
