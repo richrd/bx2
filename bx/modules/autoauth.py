@@ -8,9 +8,9 @@ class AutoAuth(bot_module.BotModule):
 
     def on_event(self, event):
         if event.name in ["bot_user_hostname_changed", "bot_user_online", "irc_channel_join"]:
-            self.logger.debug("Autoauth event: {}".format(event.name))
+            #self.logger.debug("Autoauth event: {}".format(event.name))
             if not event.user.is_authed():
-                self.logger.debug("Autoauthing {} by hostname {}".format(event.user, event.user.get_hostname()))
+                #self.logger.debug("Autoauthing {} by hostname {}".format(event.user, event.user.get_hostname()))
                 event.user.auto_authenticate()
 
 module_class = AutoAuth
