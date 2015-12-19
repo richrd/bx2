@@ -13,6 +13,7 @@ import logging
 from . import config
 
 from . import bot_main
+from . import console
 from .logger import LoggingHandler
 from . import http_handler
 
@@ -59,7 +60,9 @@ class App:
 
         # HTTP Handler
         self.http_handler = None
-        # http_handler.HTTPHandler(self)
+
+        # CLI Console
+        self.console = None
 
         # Stores serialized bots that have been stopped. Used when 'rebooting' the bots.
         # The only thing that is NOT serialized is the IRCClient instances.
@@ -71,6 +74,7 @@ class App:
             self.logger.error("Failed to initialize configuration.")
             return False
         self.setup_http()
+        self.console = console.Console(self)
         return True
 
     def setup_config(self):
@@ -104,6 +108,9 @@ class App:
             self.logger.error("Starting HTTP Server Failed!")
         self.mainloop()
 
+    def stop(self):
+        self.running = 0
+
     def create_bots(self):
         """Create bots for each server in config."""
         servers = self.config.get_servers()
@@ -124,12 +131,26 @@ class App:
             if bot.config["enabled"]:
                 bot.start()
 
+    def interrupt(self):
+        try:
+            self.console.interrupt()
+        except:
+            self.logger.exception("Failed to handle KeyboardInterrupt!")
+
     def mainloop(self):
         """Run mainloops for all bots."""
         while self.running:
             try:
+                self.maintain()
+            except KeyboardInterrupt:
+                self.interrupt()
+
+    def maintain(self):
+            try:
                 for bot in self.bots.values():
                     bot.mainloop()
+            except KeyboardInterrupt:
+                self.interrupt()
             except:
                 self.logger.exception("Failed to iterate bots!")
             # FIXME: This has performance issues. Checking for connections wastes time :(
@@ -137,13 +158,15 @@ class App:
                 if self.http_server.running:
                     try:
                         self.http_server.serve()
+                    except KeyboardInterrupt:
+                        self.interrupt()
                     except:
                         self.logger.exception("Failed to serve HTTP!")
             time.sleep(0.001)
 
     def reboot(self):
         """Stores a snapshot of all bots, shuts down them down and reloads them with the snapshots."""
-        self.logger.debug("Rebooting bots!")
+        self.logger.info("Rebooting bots!")
         try:
             # HTTP
             self.http_server = None
@@ -151,6 +174,10 @@ class App:
             reload(pyco_http)
             reload(http_handler)
             self.setup_http()
+            # Console
+            self.console = None
+            reload(console)
+            self.console = console.Console(self)
             # Serialize
             self._serialize()
             # Config
