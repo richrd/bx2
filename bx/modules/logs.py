@@ -81,24 +81,19 @@ class Logs(bot_module.BotModule):
         if not id:
             return {"data": ""}
         if log_req:
-            # response = self.generate_response(log_req["window"], log_req["min_time"],)
             response = self.generate_response(log_req)
-            self.logger.debug("response {}".format(response))
             return response
         else:
-            data = self.load_template("logs.html", {"records": "This link has expired."})
-            
+            data = self.load_template("logs.html", {"records": "This link has expired."})            
             return {
                 "headers": {"Content-Type": "text/html"},
                 "data": data
             }
-            # return {"data": "This link has expired."}
 
     def get_records(self, window, min_time):
         all_records = window.get_log()
         records = [record for record in all_records if record.get_time() > min_time]
         return records
-
     
     def load_template(self, name, args):
         template_path = os.path.join(self.bot.app.app_path, "assets", name)
@@ -107,24 +102,13 @@ class Logs(bot_module.BotModule):
         f.close()
 
         template = string.Template(data)
-        # title = window.get_name()
-        # start_time = helpers.format_timestamp(min_time)
-        # descr = "Logs starting from {}".format(start_time)
-        # output = template.safe_substitute({"title": title, "description": descr, "records": html})
         output = template.safe_substitute(args)
-        # {"title": title, "description": descr, "records": html})
         return output
 
-
-    # def generate_response(self, window, min_time, nick):
     def generate_response(self, log_request):
         window = log_request["window"]
         min_time = log_request["min_time"]
         requestor_nick = log_request["requestor_nick"]
-        #template_path = os.path.join(self.bot.app.app_path, "assets", "logs.html")
-        #f = open(template_path)
-        #data = f.read()
-        #f.close()
 
         nick_colors = {}
 
