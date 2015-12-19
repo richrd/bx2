@@ -11,9 +11,13 @@ class Part(bot_module.BotModule):
 
     def run_command(self, win, user, data, caller=None):
         if not data:
-            self.bot.irc.part(win.get_name())
+            win.part()
+            return
+
         chans = data.split()
         for chan in chans:
-            self.bot.irc.part(chan)
+            chan = self.bot.get_window(chan)
+            if chan:
+                chan.part()
 
 module_class = Part
