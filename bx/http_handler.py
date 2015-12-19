@@ -113,20 +113,11 @@ class HTTPHandler:
                             return
                         name = parts.pop(0)
                         if object == "channel":
-                            win = bot.get_window("#"+name)
-                            if win:
-                                return self.output_logs(win)
+                            return False
                         elif object == "module":
                             module = bot.get_module(name)
                             if module:
                                 return module.on_http_request(request)
-        else:
-            m, s = divmod(time.time()-self.app.init_time, 60)
-            h, m = divmod(m, 60)
-            run_time = "%d:%02d:%02d" % (h, m, s)
-            data = "BX ({})\n".format(run_time)
-            response = {"data": data}
-            return response
 
     def handle_file_request(self, request):
         parts = request.get_path_list()
@@ -135,35 +126,4 @@ class HTTPHandler:
         file_path = os.path.join(base_dir, *parts)
         response = HTTPResponse()
         response.load_from_file(file_path)
-        return response
-
-    def output_logs(self, window):
-        template_path = os.path.join(self.app.app_path, "assets", "logs.html")
-        f = open(template_path)
-        data = f.read()
-        f.close()
-
-        html = ""
-        for record in window.log:
-            time_str = datetime.datetime.fromtimestamp(record.get_time()).strftime('%H:%M')
-            message = record.get_data()
-            if record.get_name() != "privmsg":
-                message = record.get_name()
-            message = cgi.escape(message)
-            message = helpers.replace_url_to_link(message)
-            item = ('<div class="record {name}">'
-                    '<span class="time">{time}</span>'
-                    '<span class="nick">{nick}</span>'
-                    '<span class="message">{data}</span>'
-                    '</div>').format(name=record.get_name(), time=time_str, nick=record.get_nick(), data=message)
-            html += item
-
-        template = string.Template(data)
-        title = window.get_name()
-        output = template.safe_substitute({"title": title, "records": html})
-
-        response = {
-            "headers": {"Content-Type": "text/html"},
-            "data": output,
-        }
         return response
