@@ -149,6 +149,8 @@ class Bot:
             instance.set_level(options["level"])
         if "throttle_time" in options.keys():
             instance.set_throttle_time(options["throttle_time"])
+        if "essential" in options.keys():
+            instance.set_essential(options["essential"])
 
     def get_name(self):
         """Return the bots name (servers name in config)."""
@@ -159,6 +161,7 @@ class Bot:
         return self.irc.get_nick()
 
     def get_server_channels(self):
+        """Return channel names from server configuration."""
         return self.config["channels"].keys()
 
     def get_server_channel_modes(self, channel):
@@ -273,6 +276,11 @@ class Bot:
         command = self.get_command_by_alias(command)
         if command in self.modules.keys():
             module = self.modules[command]
+            # Block non essential modules in stealth mode
+            if not module.get_essential():
+                if self.config.get_stealth():
+                    if not event.user.is_authed():
+                        return False
             module._execute(event.window, event.user, args, caller)
 
     def get_command_by_alias(self, alias):
@@ -396,45 +404,7 @@ class Bot:
         return True
 
     def handle_http_request(self, request, path):
-        window_names = [win.get_name() for win in self.windows]
-        data = "BOT:{} - {}\n".format(self.name, self.get_nick())
-        data += "\n"
-
-        data += "USERS:\n"
-        for user in self.users:
-            acc_name = ""
-            if user.is_authed():
-                acc_name = user.account.get_username()
-            online = ["?", "!"][user.get_online()]
-            last_active = "????-??-?? ??:??:??"
-            if user.last_active:
-                last_active = datetime.datetime.fromtimestamp(user.last_active).strftime('%Y-%m-%d %H:%M:%S')
-            data += "{} {} {} {} [{}] {}\n".format(last_active, online, user.get_permission_level(), user.get_nick(), acc_name, user.get_hostname())
-        data += "\n"
-
-        data += "WINDOWS:\n"
-        for win_name in window_names:
-            win = self.get_window(win_name)
-            if win.zone == irc_constants.ZONE_CHANNEL:
-                data += "[{} joined:{} modes:{}]\n".format(win_name, win.get_joined(), "".join(win.get_modes()))
-            else:
-                data += "[{}]\n".format(win_name)
-            if win.zone == irc_constants.ZONE_CHANNEL:
-                data += "TOPIC: {}\n".format(win.topic)
-                win_users = win.get_users()
-                parts = ["".join([{"op": "@", "voice": "+"}[mode] for mode in win.get_user_modes(user)])+user.get_nick() for user in win_users]
-                #user_str = ", ".join(["{}{}".format(user, [win.get_user_modes(user)) for user in win_users])
-                user_str = ", ".join(parts)
-                data += "USERS:{}\n".format(user_str)
-            data += "\n"
-
-        names = self.app.config.get_account_names()
-        data += "ACCOUNTS:{}\n".format(", ".join(names))
-        module_strs = ["{}[{}]".format(module.get_name(), module.get_permission_level()) for module in self.get_modules()]
-        data += "MODULES:{}\n".format(", ".join(module_strs))
-
-        response = {"data": data}
-        return response
+        return
 
     def _serialize(self):
         serialized = {
