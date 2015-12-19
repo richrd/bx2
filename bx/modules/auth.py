@@ -14,22 +14,27 @@ class Auth(bot_module.BotModule):
     def declare():
         return {
             "zone": irc_constants.ZONE_QUERY,
-            "throttle_time": 2
+            "throttle_time": 2,
+            "essential": 1,
         }
 
     def run_command(self, win, user, data, caller=None):
+        stealth = self.bot.config.get_stealth()
         if user.is_authed():
             win.send("You're already authed!")
             return False
         parts = data.split(" ")
         if len(parts) != 2:
-            win.send("Please provide username and password")
+            if not stealth:
+                win.send("Please provide username and password")
             return False
         username, password = parts
         account = user.authenticate(username, password)
         if account:
             win.send("Authed! You are now level {}.".format(user.get_permission_level()))
             return True
-        win.send("Wrong username or password.")
+        if not stealth:
+            win.send("Wrong username or password.")
+        return False
 
 module_class = Auth

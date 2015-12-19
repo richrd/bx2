@@ -13,6 +13,9 @@ class Url(bot_module.BotModule):
     """Paste titles of urls."""
 
     def on_event(self, event):
+        # Don't paste urls in stealth mode
+        if self.bot.config.get_stealth():
+            return False
         if event.name == "irc_privmsg" and event.window.is_channel():
             self.handle_privmsg(event)
         return False
