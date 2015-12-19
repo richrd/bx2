@@ -28,12 +28,16 @@ class Logs(bot_module.BotModule):
         return binascii.hexlify(os.urandom(8)).decode("utf-8")
 
     def run_command(self, win, user, data, caller=None):
+        msg_dest = win
+        if caller:
+            msg_dest = caller
+
         if not win.is_trusted(user):
-            win.send("Sorry, you can't get logs on this channel.")
+            msg_dest.send("Sorry, you can't get logs on this channel.")
             return False
         id = self.rand_id()
         if data.lower() == "count":
-            win.send("This window has {} log records.".format(len(win.get_log())))
+            msg_dest.send("This window has {} log records.".format(len(win.get_log())))
             return True
         duration = helpers.str_to_seconds(data)
         if duration:
