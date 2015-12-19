@@ -16,6 +16,7 @@ class Commands(bot_module.BotModule):
                 continue
             if module.is_command():
                 commands.append(module.get_name())
-        win.send("Commands available to you: {}".format(" ".join(commands)))
+        commands.sort()
+        win.send("Commands available to you: {}".format(", ".join(commands)))
 
 module_class = Commands
