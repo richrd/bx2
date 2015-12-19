@@ -1,5 +1,6 @@
 {
     "server": {
+        "stealth": 0,
         "ssl": 0,
         "nick": "bx",
         "nick_suffix": "_",

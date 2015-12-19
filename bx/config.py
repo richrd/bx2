@@ -13,8 +13,11 @@ from . import helpers
 
 class Account:
     def __init__(self, config, data, filename=None):
+        # Config instance
         self.config = config
+        # Account information
         self.data = data
+        # Account filename
         self.filename = filename
 
     #
@@ -101,6 +104,79 @@ class Account:
 
     def store(self):
         self.config.store_account(self)
+
+class Server:
+    def __init__(self, config, data, filename=None):
+        # Config instance
+        self.config = config
+        # Servers information
+        self.data = data
+        # Server filename
+        self.filename = filename
+
+    #
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def get_data(self):
+        return self.data
+
+    def get_name(self):
+        return self.data["name"]
+
+    def get_host(self):
+        return self.data["host"]
+
+    def get_port(self):
+        return self.data["port"]
+
+    def get_enabled(self):
+        return self.data["enabled"]
+
+    def get_stealth(self):
+        return self.data["stealth"]
+
+    def get_auto_send(self):
+        return self.data["auto_send"]
+
+    def get_channels(self):
+        return self.data["channels"]
+
+    #
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+    def set_data(self, data):
+        self.data = data
+
+    def set_name(self, name):
+        self.data["name"] = name
+
+    def set_host(self, host):
+        self.data["host"] = host
+
+    def set_port(self, port):
+        self.data["port"] = port
+
+    def set_enabled(self, enabled):
+        self.data["enabled"] = enabled
+
+    def set_stealth(self, stealth):
+        self.data["stealth"] = stealth
+
+    def set_auto_send(self, auto_send):
+        self.data["auto_send"] = auto_send
+
+    def set_channels(self, channels):
+        self.data["channels"] = channels
+
+    #
+
+    def store(self):
+        self.config.store_server(self)
+
 
 
 class Config:
@@ -201,22 +277,19 @@ class Config:
 
     def load_servers(self):
         files = self.get_config_files(self.server_dir)
-        # TODO: REFACTOR load_config_files parsing! new items are [filename, config]
         server_configs = self.load_config_files(self.server_dir, files)
         if not server_configs:
             self.logger.warning("No servers configured!")
             return False
         for item in server_configs:
-            server = item[1]
             defaults = dict(self.config["server"])
-            conf = helpers.merge(defaults.copy(), server)
-            self.servers[server["name"]] = conf
-
+            conf = helpers.merge(defaults.copy(), item[1])
+            server = Server(self, conf, item[0])
+            self.servers[server["name"]] = server
         return True
 
     def load_accounts(self):
         files = self.get_config_files(self.account_dir)
-        # REFACTOR load_config_files parsing! new items are [filename, config]
         account_configs = self.load_config_files(self.account_dir, files)
         if not account_configs:
             self.logger.warning("No accounts configured!")
@@ -229,6 +302,10 @@ class Config:
     def store_account(self, account):
         path = os.path.join(self.account_dir, account.get_filename())
         return self.store_config_file(path, account.get_data())
+
+    def store_server(self, server):
+        path = os.path.join(self.server_dir, server.get_filename())
+        return self.store_config_file(path, server.get_data())
 
     def load_config_files(self, path, files):
         configs = []
