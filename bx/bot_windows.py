@@ -355,6 +355,10 @@ class Channel(Window):
     def ask_modes(self):
         self.bot.irc.ask_channel_modes(self.get_name())
 
+    def part(self):
+        self.bot.irc.part(self.get_name())
+        self.clear_state()
+
     def clear_state(self):
         self.logger.debug("Clearing window state.")
         self.users = {}
@@ -387,8 +391,9 @@ class Channel(Window):
                 if event.user == self.bot.get_bot_user():
                     event.window.clear_state()
             elif event.name == "irc_channel_has_users":
-                # Clear all users since this event declares them
-                self.clear_users()
+                # Can't clear users, since this event can occur multiple times
+                # when joining a channel with lots of users
+                #self.clear_users()
                 self.logger.debug("irc_channel_has_users {}".format(event.irc_args["users"]))
                 for user_item in event.irc_args["users"]:
                     user = self.bot.get_user_create(user_item[0])
