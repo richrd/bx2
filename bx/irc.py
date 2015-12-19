@@ -65,22 +65,6 @@ class IRCClient:
         # Event handlers (callbacks called with events)
         self.event_handlers = []
 
-        # Exclude event log
-        self.exclude_events = [
-            "on_ping",
-            "on_pong",
-            "on_i_joined",
-            "on_channel_has_users",
-            "on_nick_in_use",
-            "on_parse_nick_hostname",
-            "on_channel_join",
-            "on_parse_nick_hostname",
-            "on_channel_topic_is",
-            "on_channel_user_modes_changed",
-            "on_channel_creation_time",
-            "on_channel_modes_are",
-        ]
-
         # Flag indicating if the client has been initialized
         self.inited = False
 
@@ -137,7 +121,7 @@ class IRCClient:
         if not self.debugging:
             return False
         msg = " ".join(map(str, args))
-        print("IRC DEBUG:" + msg)
+        self.logger.debug(msg)
 
     #
     # Getters
@@ -179,7 +163,7 @@ class IRCClient:
         self.start()
 
     def start(self, block=True):
-        self.debug_log("Starting client...")
+        self.logger.info("Starting client...")
         connected = self.connect()
         if connected:
             self.last_connect_time = time.time()
@@ -192,7 +176,7 @@ class IRCClient:
             return False
 
     def stop(self):
-        self.debug_log("stop()")
+        self.logger.info("Stopping client...")
         self.disconnect()
 
     def is_running(self):
@@ -207,13 +191,13 @@ class IRCClient:
             self.socket = sock
 
         self.socket.settimeout(self.socket_timeout)
-        self.debug_log("Connecting to " + self.host + ":" + str(self.port) + "...")
+        self.logger.info("Connecting to " + self.host + ":" + str(self.port) + "...")
         try:
             self.socket.connect((self.host, self.port))
         except socket.error as err:
             # FIXME: no fallback when this occurs, bot stays offline in infinite loop
             # Simulate by just returning False before the try/except
-            self.debug_log("Error connecting:", str(socket.error), str(err))
+            self.logger.warning("Error connecting:", str(socket.error), str(err))
             return False
         self.on_connected()
         return True
@@ -233,10 +217,10 @@ class IRCClient:
                 return False
 
     def send(self, data):
-        if len(data) > 3 and data[:4] not in ["PING", "PONG"]:
-            self.debug_log("send:", data)
         if len(data) > 510:
-            self.debug_log("send(): data too long!")
+            print(data)
+            print(len(data))
+            self.logger.error("Data to send is too long!")
         data += "\r\n"
         self.send_buffer.append(data)
 
@@ -254,7 +238,7 @@ class IRCClient:
         except KeyboardInterrupt:
             raise
         except (socket.error) as err:
-            self.debug_log("mainloop()", "select error:", socket.error, err)
+            self.logger.exception("Socket error!")
             return False
         # Try to read from the socket
         if self.socket in readable:
@@ -268,10 +252,10 @@ class IRCClient:
                 return False
         # Die if the socket is errored
         elif self.socket in errored:
-            self.debug_log("mainloop()", "socket errored")
+            self.logger.exceptiong("Socket errored!")
             return False
         else:
-            self.debug_log("mainloop()", "socket inaccessible")
+            self.logger.exceptiong("Socket inaccessible!")
             self.disconnect()
             return False
         self.process()
@@ -287,7 +271,7 @@ class IRCClient:
         # Ping the server after inactivity and wait for reply.
         # If no timely response is received, cut the connection and reconnect.
         if elapsed > self.max_inactivity:
-            self.debug_log("KeepAlive()", "server not responding to ping, reconnecting.")
+            self.logger.warning("Server not responding to ping, reconnecting...")
             self.on_connection_timeout()
             self.disconnect()
             return
@@ -303,7 +287,7 @@ class IRCClient:
     #
 
     def introduce(self, nick=None, ident=None, realname=None):   # Send NICK and USER messages
-        self.debug_log("Introducing as:", "nick:", nick, ", ident:", ident, ", realname:", realname)
+        self.logger.info("Introducing as:", "nick:", nick, ", ident:", ident, ", realname:", realname)
         if nick is None:
             nick = self.current_nick
         if ident is None:
@@ -314,7 +298,7 @@ class IRCClient:
         self.send("USER {} 8 * :{}".format(ident, realname))
 
     def change_nick(self, nick=None):
-        self.debug_log("Changing nick to:", nick)
+        self.logger.info("Changing nick to: {}".format(nick))
         if nick is None:
             nick = self.default_nick
         self.set_nick(nick)
@@ -348,11 +332,17 @@ class IRCClient:
         self.send("KICK {} {} {}".format(chan, nick, message))
 
     def privmsg(self, dest, msg):
+        msg = str(msg)
         if not msg:
             return False
-        # TODO: wrap long msgs into multiple PRIVMSGs
+        max_len = 420
+        reserved = len("PRIVMSG {} :".format(dest))
+        while len(msg) + reserved > max_len:
+            send = msg[:max_len]
+            msg = msg[max_len:]
+            self.send("PRIVMSG {} :{}".format(dest, send))
         self.send("PRIVMSG {} :{}".format(dest, msg))
-
+        
     def notice(self, dest, msg):
         if not msg:
             return False
@@ -413,12 +403,12 @@ class IRCClient:
 
     def on_connect_throttled(self, reason=""):
         """Called when the server has throttled a connection attempt."""
-        self.debug_log("Connection was throttled because:", reason)
+        self.logger.warning("Connection was throttled because: {}".format(reason))
         self._dispatch_event()
 
     def on_connection_timeout(self):
         """Called when the server connecting isn't respondig."""
-        self.debug_log("Connection timed out.")
+        self.logger.warning("Connection timed out.")
         self._dispatch_event()
 
     def on_ping(self, data):
@@ -528,8 +518,7 @@ class IRCClient:
     # All events
     def on_event(self, name, args):
         """Called for each event that occurs, with event name and arguments."""
-        if name not in self.exclude_events:
-            self.debug_log("EVT: {} {}".format(name, args))
+        self.logger.debug("Event: {} {}".format(name, args))
         for handler in self.event_handlers:
             handler(name, args)
 
@@ -571,17 +560,14 @@ class IRCClient:
             received = self.socket.recv(self.read_chunk_size)
         except socket.timeout as e:
             err = e.args[0]
-            self.debug_log("receive_to_buffer()", "timed out", "ERR:", err)
+            self.logger.exception("Receiving data to buffer timed out!")
             if err == "timed out":
                 return True
         except socket.error as e:
-            self.debug_log("receive_to_buffer()", "failed sock.recv", e)
+            self.logger.exception("receive_to_buffer()", "failed sock.recv", e)
             return False
-        if len(received) == 0:
-            self.debug_log("receive_to_buffer()", "received empty data")
-            return False
-        if not received:
-            self.debug_log("receive_to_buffer()", "received nothing, sock dead?!")
+        if not received or len(received) == 0:
+            self.logger.warning("Received empty data from socket!")
             return False
         data = self.decode_received_data(received)
         self.raw_buffer = self.raw_buffer + data
@@ -621,9 +607,7 @@ class IRCClient:
             self.process_receive_buffer()
             self.keep_alive()
         except Exception as e:
-            print(traceback.format_exc())
-            print(sys.exc_info()[0])
-            self.debug_log("Process()", e)
+            self.logger.exception("Failed to run processing!")
 
     def process_send_buffer(self):
         """Send a single line from the send buffer."""
@@ -632,7 +616,7 @@ class IRCClient:
             if self.last_send_time is None or time.time() - self.last_send_time > self.send_throttling:
                 line = self.send_buffer.pop(0)
                 if not self.send_all_to_socket(line):
-                    self.debug_log("process_send_buffer: send_all_to_socket failed")
+                    self.logger.warning("Failed to send data to socket!")
                     return False
                 self.last_send_time = time.time()
         return True
@@ -649,7 +633,6 @@ class IRCClient:
             if len(left) == sent:
                 return True
             left = left[sent:]
-            # except:
             #     self.debug_log("send_all_to_socket errored")
             #     return False
         return False
