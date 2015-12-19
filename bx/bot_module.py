@@ -14,6 +14,7 @@ class BotModule:
         self.initialized = 0
         self.zone = irc_constants.ZONE_BOTH
         self.level = 0
+        self.essential = 0
 
         # Last time the command was run.
         self.last_exec = None
@@ -46,6 +47,9 @@ class BotModule:
     def get_throttle_time(self):
         return self.throttle_time
 
+    def get_essential(self):
+        return self.essential
+
     def get_url(self):
         parts = ["server", self.bot.get_name(), "module", self.get_name()]
         path = "/".join(parts)
@@ -66,8 +70,10 @@ class BotModule:
     def set_throttle_time(self, throttle_time):
         self.throttle_time = throttle_time
 
+    def set_essential(self, essential):
+        self.essential = essential
+
     def is_command(self):
-        self.logger.debug("{} {}".format(self.run_command.__doc__, BotModule.run_command.__doc__))
         return self.run_command.__doc__ != BotModule.run_command.__doc__
 
     def init(self):
@@ -111,9 +117,8 @@ class BotModule:
             return False
         return True
 
-    # Determine wether the command can be run
-    # Blocks command spamming
     def _is_throttled(self, user):
+        """Determine wether the command can be run. Blocks command spamming."""
         if user in self.users.keys():
             t = self.users[user][0]
             if (time.time()-t) < self.throttle_time:
@@ -139,13 +144,17 @@ class BotModule:
             return False
 
     def _execute(self, win, user, data, caller=None):
+        # Restrict window
         if not self._is_allowed_window(win):
-            win.send("you can't do that here, use privmsg")
+            if not self.bot.config.get_stealth():
+                win.send("you can't do that here, use privmsg")
             return False
+        # Restrict to calling user first
         if self._is_allowed_user(caller):
             # Callers have higher priority (run stuff on behalf of other users. only available to admins.)
             self._safe_run(win, user, data, caller)
             return True
+        # Restrict to real user
         if self._is_allowed_user(user):
             if self._is_throttled(user):
                 if self._should_warn_throttle(user):
