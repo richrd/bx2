@@ -14,5 +14,6 @@ class Reboot(bot_module.BotModule):
         if not self.bot.app.reboot():
             win.send("Reboot failed.")
             return False
+        win.send("Done.")
 
 module_class = Reboot
