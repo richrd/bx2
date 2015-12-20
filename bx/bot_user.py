@@ -85,7 +85,7 @@ class User:
         if not self.account:
             return []
         return self.account.get_server_channels(self.bot.get_name())
-        
+
     def is_trusted_channel(self, win):
         if not isinstance(win, str):
             win = win.get_name()
@@ -173,7 +173,6 @@ class User:
             pass  # Avoid triggering on_action
         elif event.name.startswith("irc_"):
             # Check for irc event to avoid triggering actions for bot events.
-            #self.logger.debug("User {} on_action: {}.".format(event.user, event.name))
             self.on_action()
 
     #

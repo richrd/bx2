@@ -87,9 +87,6 @@ class Window:
 
         # Message log
         self.log = []
-        
-        # Max log length
-        #self.log_length = 100000  # 100k records
 
         # Subscribe to all events
         self.bot.add_event_handler(self.on_event)
@@ -151,7 +148,6 @@ class Window:
         record.set_nick(self.bot.get_bot_user().get_nick())
         record.set_data(str(msg))
         self.log.append(record)
-
 
     def privmsg(self, msg):
         self.bot.irc.privmsg(self.get_name(), msg)
@@ -296,25 +292,25 @@ class Channel(Window):
     def give_voice(self, users):
         if not isinstance(users, list):
             users = [users]
-        nickmodes =  [(user.get_nick(), "v") for user in users]
+        nickmodes = [(user.get_nick(), "v") for user in users]
         self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes)
 
     def give_op(self, users):
         if not isinstance(users, list):
             users = [users]
-        nickmodes =  [(user.get_nick(), "o") for user in users]
+        nickmodes = [(user.get_nick(), "o") for user in users]
         self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes)
 
     def take_voice(self, users):
         if not isinstance(users, list):
             users = [users]
-        nickmodes =  [(user.get_nick(), "v") for user in users]
+        nickmodes = [(user.get_nick(), "v") for user in users]
         self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes, False)
 
     def take_op(self, users):
         if not isinstance(users, list):
             users = [users]
-        nickmodes =  [(user.get_nick(), "o") for user in users]
+        nickmodes = [(user.get_nick(), "o") for user in users]
         self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes, False)
 
     def has_voice(self, user):
@@ -391,9 +387,8 @@ class Channel(Window):
                 if event.user == self.bot.get_bot_user():
                     event.window.clear_state()
             elif event.name == "irc_channel_has_users":
-                # Can't clear users, since this event can occur multiple times
-                # when joining a channel with lots of users
-                #self.clear_users()
+                # Can't clear users, since this event occurs multiple times
+                # when joining a channel with lots of users (userlist sent in chunks)
                 self.logger.debug("irc_channel_has_users {}".format(event.irc_args["users"]))
                 for user_item in event.irc_args["users"]:
                     user = self.bot.get_user_create(user_item[0])

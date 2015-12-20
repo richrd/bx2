@@ -5,7 +5,6 @@ The Bot class for handling a single IRC server.
 import __future__
 import os
 import time
-import datetime
 import logging
 
 from . import irc

@@ -38,7 +38,7 @@ class ModuleLoader:
                 self.logger.error("Module '{}' didn't specify a class!".format(name))
                 return False
             return module
-        except (Exception) as e:
+        except Exception:
             # FIXME: use logging lib
             print("Failed loading:", name)
             print(traceback.format_exc())
