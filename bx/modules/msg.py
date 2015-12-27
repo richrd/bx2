@@ -4,6 +4,7 @@ from bx import bot_module
 
 class Msg(bot_module.BotModule):
     """Give OPs to yourself (default), or a list of nicks, or everyone (with '*')."""
+
     @staticmethod
     def declare():
         return {"level": 100}

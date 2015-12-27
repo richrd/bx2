@@ -14,7 +14,6 @@ from bx import bot_module
 class Logs(bot_module.BotModule):
     """Get channel logs."""
 
-    # FIXME: check if user is trusted on specific channel
     @staticmethod
     def declare():
         return {"level": 10}
@@ -57,7 +56,7 @@ class Logs(bot_module.BotModule):
             "time": time.time(),
             "requestor_nick": user.get_nick()
         }
-        
+
         url = self.get_url()
         user.send("{}?{}".format(url, id))
 
@@ -84,7 +83,7 @@ class Logs(bot_module.BotModule):
             response = self.generate_response(log_req)
             return response
         else:
-            data = self.load_template("logs.html", {"records": "This link has expired."})            
+            data = self.load_template("logs.html", {"records": "This link has expired."})
             return {
                 "headers": {"Content-Type": "text/html"},
                 "data": data
@@ -94,7 +93,7 @@ class Logs(bot_module.BotModule):
         all_records = window.get_log()
         records = [record for record in all_records if record.get_time() > min_time]
         return records
-    
+
     def load_template(self, name, args):
         template_path = os.path.join(self.bot.app.app_path, "assets", name)
         f = open(template_path)
@@ -128,27 +127,33 @@ class Logs(bot_module.BotModule):
             if record.get_nick() not in nick_colors.keys():
                 random.seed(record.get_nick())
                 nick_colors[record.get_nick()] = helpers.hsv_to_rgb(abs(1-random.random()), 0.5, 0.95)
-                # nick_colors[record.get_nick()] = helpers.generate_colors(1)[0]
             nick_color = nick_colors[record.get_nick()]
             message = cgi.escape(message)
             message = helpers.replace_url_to_link(message)
             if requestor_nick in message:
                 classes += " highlight"
                 message = message.replace(requestor_nick, '<span class="highlight">{}</span>'.format(requestor_nick))
-                
-            item = ('<div class="record {name} {classes}">'
-                    '<span class="time">{time}&nbsp;</span>'
-                    '<span class="nick" style="color:rgb{nick_color}">{nick}&nbsp;</span>'
-                    '<span class="message">{data}</span>'
-                    '</div>').format(name=record.get_name(), classes=classes, time=time_str, nick=record.get_nick(), nick_color=nick_color, data=message)
+
+            item = (
+                '<div class="record {name} {classes}">'
+                '<span class="time">{time}&nbsp;</span>'
+                '<span class="nick" style="color:rgb{nick_color}">{nick}&nbsp;</span>'
+                '<span class="message">{data}</span>'
+                '</div>'
+                ).format(
+                    name=record.get_name(),
+                    classes=classes,
+                    time=time_str,
+                    nick=record.get_nick(),
+                    nick_color=nick_color,
+                    data=message
+                )
 
             html += item
 
-        # template = string.Template(data)
         title = window.get_name()
         start_time = helpers.format_timestamp(min_time)
         descr = "Logs starting from {}".format(start_time)
-        # output = template.safe_substitute({"title": title, "description": descr, "records": html})
         output = self.load_template("logs.html", {"title": title, "description": descr, "records": html})
 
         response = {

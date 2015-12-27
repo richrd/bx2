@@ -18,7 +18,7 @@ class Seen(bot_module.BotModule):
         if not target:
             win.send("I haven't seen that user.")
             return False
-        
+
         last_active = "not seen for a while"
         active = target.get_last_active()
         if active:

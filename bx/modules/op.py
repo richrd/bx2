@@ -4,6 +4,7 @@ from bx import bot_module
 
 class Op(bot_module.BotModule):
     """Give OPs to yourself (default), or a list of nicks, or everyone (with '*')."""
+
     @staticmethod
     def declare():
         return {"level": 10}
@@ -15,7 +16,7 @@ class Op(bot_module.BotModule):
             return True
         if data == "*":
             # Op everyone on the channel
-            users = [user for user in win.get_users() if not win.has_op(user)]
+            users = [u for u in win.get_users() if not win.has_op(u)]
             win.give_op(users)
             return True
         else:

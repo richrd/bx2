@@ -26,8 +26,9 @@ class Help(bot_module.BotModule):
 
     def general_help(self, user):
         """Display general help."""
+        cmd_prefix = self.bot.config["cmd_prefix"]
         lines = [
-            "You can run commands by typing a '" + self.bot.config["cmd_prefix"] + "' at the beginning of a message.",
+            "You can run commands by typing a '{}' at the beginning of a message.".format(cmd_prefix),
             "To see what commands are available use 'cmds'",
             "and to see what a command does, use 'help command'.",
             "You can login with 'auth' and logout with 'deauth'. Ask the bot owner for an account.",
@@ -35,7 +36,8 @@ class Help(bot_module.BotModule):
             "To ask me to remember your account, use 'trustme'.",
             "Check out the code @ GitHub: https://github.com/richrd/bx2",
             "Peace.",
-            ]
+        ]
+
         for line in lines:
             user.send(line)
 

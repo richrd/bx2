@@ -9,9 +9,7 @@ class GitPull(bot_module.BotModule):
 
     @staticmethod
     def declare():
-        return {
-            "level": 100
-        }
+        return {"level": 100}
 
     def run_command(self, win, user, data, caller=""):
         try:

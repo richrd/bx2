@@ -7,11 +7,9 @@ class GainOp(bot_module.BotModule):
 
     @staticmethod
     def declare():
-        return {
-            "level": 100,
-        }
+        return {"level": 100}
 
     def run_command(self, win, user, data, caller=None):
-        self.bot.irc.privmsg("R","requestop " + win.get_name())
+        self.bot.irc.privmsg("R", "requestop {}".format(win.get_name()))
 
 module_class = GainOp

@@ -1,7 +1,6 @@
 
-from bx import bot_event
 from bx import bot_module
-from bx import irc_constants
+
 
 class Run(bot_module.BotModule):
     """Run a command as another and  window.
@@ -11,9 +10,7 @@ class Run(bot_module.BotModule):
 
     @staticmethod
     def declare():
-        return {
-            "level": 100
-        }
+        return {"level": 100}
 
     def run_command(self, win, user, data, caller=None):
         args = data.split(" ")

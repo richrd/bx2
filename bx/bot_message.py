@@ -29,7 +29,6 @@ class Message:
             "nick": self.nick,
             "text": self.text,
             "dest": self.dest,
-            # "user": self.user,
         }
         return serialized
 
@@ -38,4 +37,3 @@ class Message:
         self.nick = data["nick"]
         self.text = data["text"]
         self.dest = data["dest"]
-        # self.user = data["user"]
