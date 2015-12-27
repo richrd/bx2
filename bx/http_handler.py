@@ -1,16 +1,11 @@
 
 import os
 import sys
-import cgi
-import time
 import logging
-import datetime
 import traceback
 import mimetypes
-import string
 
 from . import helpers
-from .lib import pyco_http
 
 __reload__ = [helpers]
 
@@ -88,8 +83,10 @@ class HTTPHandler:
     def handle_request(self, request):
         try:
             return self._handle_request(request)
-        except:
-            self.logger.exception("Failed to handle request!")
+        except Exception:
+            # FIXME: use logging lib
+            print(traceback.format_exc())
+            print(sys.exc_info()[0])
             return False
 
     def _handle_request(self, request):

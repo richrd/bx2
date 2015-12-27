@@ -5,14 +5,12 @@ Handles all neccessary parts of the IRC protocol for client connections.
 Sits in IRC doing nothing except respond to PINGs.
 """
 
-import sys
 import time
 import select
 import socket
 import ssl
 import inspect
 import logging
-import traceback
 
 from . import irc_constants
 
@@ -240,7 +238,7 @@ class IRCClient:
             time.sleep(self.select_interval)  # TODO: do we really need this?
         except KeyboardInterrupt:
             raise
-        except (socket.error) as err:
+        except socket.error:
             self.logger.exception("Socket error!")
             return False
         # Try to read from the socket
@@ -345,7 +343,7 @@ class IRCClient:
             msg = msg[max_len:]
             self.send("PRIVMSG {} :{}".format(dest, send))
         self.send("PRIVMSG {} :{}".format(dest, msg))
-        
+
     def notice(self, dest, msg):
         if not msg:
             return False
@@ -610,7 +608,7 @@ class IRCClient:
         try:
             self.process_receive_buffer()
             self.keep_alive()
-        except Exception as e:
+        except Exception:
             self.logger.exception("Failed to run processing!")
 
     def process_send_buffer(self):

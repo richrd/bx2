@@ -17,19 +17,19 @@ class Console:
         cmds = ", ".join(self.cmds.keys())
         print("COMMANDS: {}".format(cmds))
 
-    def reboot(self, args = ""):
+    def reboot(self, args=""):
         self.app.reboot()
 
-    def exit(self, args = ""):
+    def exit(self, args=""):
         self.app.stop()
 
-    def eval(self, args = ""):
+    def eval(self, args=""):
         try:
             print(eval(args))
         except:
             print("Failed.")
 
-    def exec(self, args = ""):
+    def exec(self, args=""):
         try:
             print(exec(args))
         except:
@@ -53,4 +53,3 @@ class Console:
             self.cmds[start](args)
         else:
             print("Invalid command.")
-

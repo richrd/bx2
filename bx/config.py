@@ -58,7 +58,7 @@ class Account:
         return self.filename
 
     def get_server(self, name):
-        if not name in self.data["servers"].keys():
+        if name not in self.data["servers"].keys():
             return False
         return self.data["servers"][name]
 
@@ -104,6 +104,7 @@ class Account:
 
     def store(self):
         self.config.store_account(self)
+
 
 class Server:
     def __init__(self, config, data, filename=None):
@@ -176,7 +177,6 @@ class Server:
 
     def store(self):
         self.config.store_server(self)
-
 
 
 class Config:
