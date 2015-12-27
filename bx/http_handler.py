@@ -3,6 +3,7 @@ import os
 import sys
 import cgi
 import time
+import logging
 import datetime
 import traceback
 import mimetypes
@@ -65,6 +66,9 @@ class HTTPRequest:
     def get_query(self):
         return self.request.parsed_url.query
 
+    def get_ip(self):
+        return self.request.client[0]
+
     def get_path_list(self):
         path = self.get_path()
         if path[0] == "/":
@@ -76,6 +80,7 @@ class HTTPRequest:
 class HTTPHandler:
     def __init__(self, app):
         self.app = app
+        self.logger = logging.getLogger("http_handler")
         self.file_routes = {
             "assets": os.path.join(self.app.app_path, "assets")
         }
@@ -83,14 +88,13 @@ class HTTPHandler:
     def handle_request(self, request):
         try:
             return self._handle_request(request)
-        except (Exception) as e:
-            # FIXME: use logging lib
-            print(traceback.format_exc())
-            print(sys.exc_info()[0])
+        except:
+            self.logger.exception("Failed to handle request!")
             return False
 
     def _handle_request(self, request):
         request = HTTPRequest(request)
+        self.logger.info("HTTP Request: {}, {}".format(request.get_ip(), request.get_path()))
         parts = request.get_path_list()
         if not parts[-1]:
             parts.pop(-1)
