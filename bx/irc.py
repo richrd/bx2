@@ -130,6 +130,9 @@ class IRCClient:
     def get_nick(self):
         return self.current_nick
 
+    def get_irc_connected(self):
+        return self.irc_connected
+
     #
     # Setters
     #
@@ -287,7 +290,7 @@ class IRCClient:
     #
 
     def introduce(self, nick=None, ident=None, realname=None):   # Send NICK and USER messages
-        self.logger.info("Introducing as:", "nick:", nick, ", ident:", ident, ", realname:", realname)
+        self.logger.info("Introducing: nick:{}, ident:{}, realname:{}".format(nick, ident, realname))
         if nick is None:
             nick = self.current_nick
         if ident is None:
@@ -380,6 +383,7 @@ class IRCClient:
     def on_connected(self):
         """Called when the client has connected to the server."""
         self.irc_connected = True
+        self.last_connect_time = time.time()
         self.last_receive_time = time.time()
         self._dispatch_event()
         self.introduce()
@@ -518,7 +522,7 @@ class IRCClient:
     # All events
     def on_event(self, name, args):
         """Called for each event that occurs, with event name and arguments."""
-        self.logger.debug("Event: {} {}".format(name, args))
+        # self.logger.debug("Event: {} {}".format(name, args))
         for handler in self.event_handlers:
             handler(name, args)
 
@@ -616,7 +620,7 @@ class IRCClient:
             if self.last_send_time is None or time.time() - self.last_send_time > self.send_throttling:
                 line = self.send_buffer.pop(0)
                 if not self.send_all_to_socket(line):
-                    self.logger.warning("Failed to send data to socket!")
+                    self.logger.warning("Failed to send data to socket! Data:{}".format(line))
                     return False
                 self.last_send_time = time.time()
         return True
