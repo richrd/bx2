@@ -20,6 +20,7 @@ class StartBot(bot_module.BotModule):
                 return False
             bot.setup_client()
             bot.start()
+            win.send("Done.")
         else:
             servers = self.bot.app.config.get_servers()
             if bot_name not in servers.keys():
@@ -29,5 +30,6 @@ class StartBot(bot_module.BotModule):
             config = servers[bot_name]
             bot = self.bot.app.create_bot(bot_name, config)
             bot.start()
+            win.send("Done.")
 
 module_class = StartBot

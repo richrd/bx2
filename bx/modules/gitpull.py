@@ -17,7 +17,8 @@ class GitPull(bot_module.BotModule):
         try:
             process = subprocess.Popen(["git", "pull"], stdout=subprocess.PIPE, cwd=self.bot.app.app_path)
             output = process.communicate()[0]
-            win.send("Done")
+            win.send("Done. Output:")
+            win.send(output)
         except:
             self.logger.exception("Failed to 'git pull'!")
 
