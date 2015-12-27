@@ -10,6 +10,6 @@ class Disconnect(bot_module.BotModule):
         return {"level": 100}
 
     def run_command(self, win, user, data, caller=None):
-        self.bot.stop()
+        self.bot.irc.disconnect()
 
 module_class = Disconnect
