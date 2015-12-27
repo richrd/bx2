@@ -102,6 +102,7 @@ class User:
         old_hostname = self.hostname
         self.hostname = hostname
         if old_hostname != self.hostname:
+            self.logger.debug("Hostname changed to {} from {}".format(hostname, old_hostname))
             event = bot_event.Event(self.bot, "bot_user_hostname_changed")
             event.set_user(self)
             self.bot.trigger_event(event)

@@ -9,6 +9,7 @@ __reload__ = [irc_constants, bot_message]
 
 
 class LogRecord:
+    """A window log record for representing messages, joins, parts etc."""
     def __init__(self):
         self.name = ""
         self.time = time.time()
@@ -47,6 +48,7 @@ class LogRecord:
         return self.nick
 
     def parse_from_event(self, event):
+        """Initialize the record by parsing event data."""
         if event.name not in self.name_map:
             return False
         self.name = self.name_map[event.name]
@@ -83,14 +85,11 @@ class Window:
         self.name = name
         self.zone = None
 
-        self.logger = logging.getLogger("{}.{}".format(__name__, name))
+        self.logger = logging.getLogger("{}[{}].{}".format(__name__, bot.get_name(), name))
 
         # Message log
         self.log = []
         
-        # Max log length
-        #self.log_length = 100000  # 100k records
-
         # Subscribe to all events
         self.bot.add_event_handler(self.on_event)
 
@@ -101,31 +100,37 @@ class Window:
         return "[{}]".format(self.get_name())
 
     def get_name(self):
+        """Get window name. Returns either the channel name or query nick."""
         if self.zone == irc_constants.ZONE_QUERY:
             # FIXME: safety debugging check. Fix asap.
             if self.user:
                 return self.user.get_nick()
             else:
-                self.logger.error("Query has no user!!!")
+                self.logger.error("Query has no user, this shouldn't happen!")
                 return ""
         return self.name
 
     def get_log(self):
+        """Get window log records."""
         return self.log
 
     def get_log_limit(self):
         return self.bot.config["log_limit"]
 
     def is_channel(self):
+        """Check if window is a channel."""
         return self.zone == irc_constants.ZONE_CHANNEL
 
     def is_query(self):
+        """Check if window is a query."""
         return self.zone == irc_constants.ZONE_QUERY
 
     def is_trusted(self, user):
+        """Check if user is trusted in this window."""
         return False
 
     def on_privmsg(self, event):
+        self.logger.info("{} {}".format(event.user, event.data))
         self.add_log_record_from_event(event)
 
     def on_event(self, event):
@@ -134,7 +139,6 @@ class Window:
                 self.on_privmsg(event)
 
     def add_log_record_from_event(self, event):
-        # TODO: implement log limit
         while len(self.log) > self.get_log_limit():
             self.log.pop(0)
         record = LogRecord().parse_from_event(event)
@@ -145,6 +149,8 @@ class Window:
     #
 
     def send(self, msg):
+        """Send a message to the window."""
+        self.logger.info("{} {}".format(self.bot.get_bot_user(), msg))
         self.privmsg(msg)
         record = LogRecord()
         record.set_name("privmsg")
@@ -154,6 +160,7 @@ class Window:
 
 
     def privmsg(self, msg):
+        """Send a privmsg to the window."""
         self.bot.irc.privmsg(self.get_name(), msg)
 
     #
@@ -185,9 +192,17 @@ class Query(Window):
         self.user = self.bot.get_user(name)
 
     def get_users(self):
+        """Get user list."""
         return [self.user]
 
+    def is_trusted(self, user):
+        # Bot owner is always trusted
+        if user.get_permission_level() >= 100:
+            return True
+        return False
+
     def notice(self, msg):
+        """Send a notice."""
         self.bot.irc.notice(self.get_name(), msg)
 
     def _serialize(self):
@@ -318,10 +333,14 @@ class Channel(Window):
         self.bot.irc.set_channel_user_modes(self.get_name(), nickmodes, False)
 
     def has_voice(self, user):
+        if not self.has_user(user):
+            return False
         modes = self.get_user_modes(user)
         return irc_constants.MODE_VOICE in modes
 
     def has_op(self, user):
+        if not self.has_user(user):
+            return False
         modes = self.get_user_modes(user)
         return irc_constants.MODE_OP in modes
 
@@ -349,7 +368,10 @@ class Channel(Window):
         if self.has_user(user):
             del self.users[user]
             return True
-        self.logger.warning("Trying to remove non-existing user from channel!")
+        if user == self.bot.get_bot_user():
+            self.logger.warning("Removing myself from empty channel (parted).")
+            return False
+        self.logger.warning("Trying to remove non-existing user {} from channel! ".format(user))
         return False
 
     def ask_modes(self):
@@ -380,6 +402,7 @@ class Channel(Window):
         # Event that requires the current channel
         if event.window == self:
             if event.name == "irc_i_joined":
+                self.logger.info("Joined {}".format(event.window))
                 self.joined = 1
             if event.name == "irc_channel_join":
                 self.add_user(event.user)

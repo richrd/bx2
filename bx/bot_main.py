@@ -54,7 +54,7 @@ class Bot:
         # Modules
         self.modules = {}
 
-        # Force reload TODO: disable when ready for production
+        # Force reload FIXME: disable when ready for production
         self.reboot_identifier = "forcebootbx"
 
     def _init(self):
@@ -160,6 +160,9 @@ class Bot:
         """Return the bots current nick."""
         return self.irc.get_nick()
 
+    def get_connected(self):
+        return self.irc.get_irc_connected()
+
     def get_server_channels(self):
         """Return channel names from server configuration."""
         return self.config["channels"].keys()
@@ -227,6 +230,9 @@ class Bot:
 
     def on_connected(self):
         self.logger.info("Connected!")
+        # Create the bot user if it doesn't exist
+        # Needs to be done when no channels are joined
+        self.create_user(self.irc.get_nick())
 
     def on_disconnect(self):
         self.logger.debug("on_disconnect: running:{} enabled:{}".format(self.running, self.config["enabled"]))

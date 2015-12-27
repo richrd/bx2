@@ -70,6 +70,13 @@ def str_to_seconds(s):
     return n*unit
 
 
+def seconds_to_duration(sec):
+    m, s = divmod(sec, 60)
+    h, m = divmod(m, 60)
+    d, h = divmod(h, 24)
+    return "%d days %d:%02d:%02d" % (d, h, m, s)
+
+
 def escape_html(self, html):
     import html.parser
     html_parser = html.parser.HTMLParser()
@@ -140,6 +147,7 @@ def load_json(file):
 
 
 def send_all_to_socket(self, data, sock):
+    # TODO: Deprecate?
     # TODO: Might want to check irc_connected and irc_running before trying to send
     left = data
     while left != "":
