@@ -237,15 +237,19 @@ class Channel(Window):
         self.joined = 0
 
     def get_joined(self):
+        """Check if the bot is currently joined to this channel."""
         return self.joined
 
     def get_modes(self):
+        """Get channel modes."""
         return self.modes
 
     def get_users(self):
+        """Get list of users."""
         return list(self.users.keys())
 
     def get_user_modes(self, user):
+        """Get modes of a user."""
         return self.users[user]["modes"]
 
     def is_trusted(self, user):
@@ -392,9 +396,9 @@ class Channel(Window):
     def on_event(self, event):
         Window.on_event(self, event)
         if event.name == "irc_quit":
-            if event.user in self.get_users():
+            if self.has_user(event.user):
                 self.add_log_record_from_event(event)
-            self.remove_user(event.user)
+                self.remove_user(event.user)
         if event.name == "irc_disconnect":
             # Clear all users on disconnect (cant do bookkeeping)
             self.clear_state()
@@ -404,6 +408,7 @@ class Channel(Window):
                 self.logger.info("Joined {}".format(event.window))
                 self.joined = 1
             if event.name == "irc_channel_join":
+                self.logger.info("{} joined.".format(event.user))
                 self.add_user(event.user)
                 self.add_log_record_from_event(event)
             elif event.name in ["irc_channel_part", "irc_channel_kick"]:
@@ -432,6 +437,7 @@ class Channel(Window):
                 self.set_changed_user_modes(event.modes)
 
     def _serialize(self):
+        self.logger.debug("Serializing window {}".format(self))
         serialized = Window._serialize(self)
         serialized["zone"] = self.zone
         serialized["modes"] = self.modes
