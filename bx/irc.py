@@ -198,7 +198,7 @@ class IRCClient:
         except socket.error as err:
             # FIXME: no fallback when this occurs, bot stays offline in infinite loop
             # Simulate by just returning False before the try/except
-            self.logger.warning("Error connecting:", str(socket.error), str(err))
+            self.logger.warning("Error connecting: {}, {}".format(str(socket.error), str(err)))
             return False
         self.on_connected()
         return True
