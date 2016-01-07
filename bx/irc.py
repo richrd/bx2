@@ -363,7 +363,7 @@ class IRCClient:
         for item in nickmodes:
             nicks.append(item[0])
             modes += item[1]
-        self.send(u"MODE {} {} {}".format(chan, modes, (" ".join(nicks))))
+        self.send("MODE {} {} {}".format(chan, modes, (" ".join(nicks))))
 
     def set_channel_topic(self, chan, topic):
         self.send("TOPIC {} :{}".format(chan, topic))
