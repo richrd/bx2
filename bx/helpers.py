@@ -1,8 +1,10 @@
 
+import os
 import re
 import json
 import random
 import datetime
+import subprocess
 
 
 def merge(x, y):
@@ -143,14 +145,12 @@ def load_json(file):
     return json.loads(data)
 
 
-def send_all_to_socket(self, data, sock):
-    # FIXME: deprecate
-    # TODO: Might want to check irc_connected and irc_running before trying to send
-    left = data
-    while left != "":
-        data = bytes(data, self.outgoing_encoding)
-        sent = sock.send(data)
-        if len(left) == sent:
-            return True
-        left = left[sent:]
-    return False
+def get_shell_output(command):
+    try:
+        fnull = open(os.devnull, "w")
+        raw_str = subprocess.check_output(["acpi"], stderr=fnull)
+        fnull.close()
+    except:
+        return None
+    raw_str = raw_str.decode("utf-8")
+    return raw_str
