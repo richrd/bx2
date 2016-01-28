@@ -146,9 +146,10 @@ def load_json(file):
 
 
 def get_shell_output(command):
+    parts = command.split(" ")
     try:
         fnull = open(os.devnull, "w")
-        raw_str = subprocess.check_output(["acpi"], stderr=fnull)
+        raw_str = subprocess.check_output(parts, stderr=fnull)
         fnull.close()
     except:
         return None
