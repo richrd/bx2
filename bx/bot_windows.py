@@ -151,6 +151,7 @@ class Window:
     def send(self, msg):
         """Send a message to the window."""
         self.logger.info("{} {}".format(self.bot.get_bot_user(), msg))
+        msg = str(msg)  # Handle objects too
         msg = msg.replace("\n", "")
         self.privmsg(msg)
         record = LogRecord()
