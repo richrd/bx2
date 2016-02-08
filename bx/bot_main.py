@@ -258,7 +258,7 @@ class Bot:
         cmd_str = self.get_message_command(event.data)
         if cmd_str:
             parts = cmd_str.split(" ")
-            cmd = parts[0]
+            cmd = parts[0].lower()
             args = " ".join(parts[1:])
             self.run_command(cmd, args, event)
 
@@ -267,7 +267,7 @@ class Bot:
         # Check nick command
         if len(msg) > len(nick)+1:
             if msg.lower()[:len(nick)] == nick.lower():
-                if msg[len(nick)] in [",", ":"]:
+                if msg[len(nick)] in [",", ":", " "]:
                     return msg[len(nick)+1:].strip()
         # Check prefix command
         prefix = self.config["cmd_prefix"]
