@@ -13,5 +13,3 @@ class Raw(bot_module.BotModule):
         if not data:
             return False
         self.bot.irc.send(data)
-
-module_class = Raw

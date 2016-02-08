@@ -137,5 +137,3 @@ class Url(bot_module.BotModule):
         if not title:
             return False
         return title
-
-module_class = Url

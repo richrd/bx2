@@ -24,5 +24,3 @@ class Op(bot_module.BotModule):
             users = [self.bot.get_user(nick) for nick in nicks]
             win.give_op(users)
             return True
-
-module_class = Op

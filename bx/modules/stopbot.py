@@ -20,5 +20,3 @@ class StopBot(bot_module.BotModule):
         bot = self.bot.app.bots[bot_name]
         bot.stop()
         win.send("done")
-
-module_class = StopBot

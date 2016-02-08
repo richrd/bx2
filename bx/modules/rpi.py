@@ -33,6 +33,3 @@ class RPi(bot_module.BotModule):
             return output
         except:
             return False
-
-module_class = RPi
-

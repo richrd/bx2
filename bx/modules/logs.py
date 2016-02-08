@@ -161,5 +161,3 @@ class Logs(bot_module.BotModule):
             "data": output,
         }
         return response
-
-module_class = Logs

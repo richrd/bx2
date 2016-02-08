@@ -40,5 +40,3 @@ class Help(bot_module.BotModule):
 
         for line in lines:
             user.send(line)
-
-module_class = Help

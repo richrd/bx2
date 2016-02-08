@@ -17,5 +17,3 @@ class Msg(bot_module.BotModule):
         nick = parts[0]
         msg = " ".join(parts[1:])
         self.bot.irc.privmsg(nick, msg)
-
-module_class = Msg

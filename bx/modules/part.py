@@ -19,5 +19,3 @@ class Part(bot_module.BotModule):
             chan = self.bot.get_window(chan)
             if chan:
                 chan.part()
-
-module_class = Part

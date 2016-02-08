@@ -17,5 +17,3 @@ class Exec(bot_module.BotModule):
         except:
             self.logger.exception("Exec failed")
             win.send("Exec failed.")
-
-module_class = Exec

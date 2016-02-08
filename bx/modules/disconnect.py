@@ -11,5 +11,3 @@ class Disconnect(bot_module.BotModule):
 
     def run_command(self, win, user, data, caller=None):
         self.bot.stop()
-
-module_class = Disconnect

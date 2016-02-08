@@ -36,5 +36,3 @@ class Auth(bot_module.BotModule):
         if not stealth:
             win.send("Wrong username or password.")
         return False
-
-module_class = Auth

@@ -9,5 +9,3 @@ class AutoAuth(bot_module.BotModule):
         if event.name in ["bot_user_hostname_changed", "bot_user_online", "irc_channel_join"]:
             if not event.user.is_authed():
                 event.user.auto_authenticate()
-
-module_class = AutoAuth

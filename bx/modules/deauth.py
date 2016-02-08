@@ -11,5 +11,3 @@ class Deauth(bot_module.BotModule):
             return True
         win.send("You aren't logged in!")
         return False
-
-module_class = Deauth

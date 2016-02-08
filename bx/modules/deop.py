@@ -23,5 +23,3 @@ class Deop(bot_module.BotModule):
             users = [self.bot.get_user(nick) for nick in nicks]
             win.take_op(users)
             return True
-
-module_class = Deop

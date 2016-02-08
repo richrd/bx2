@@ -15,5 +15,3 @@ class Level(bot_module.BotModule):
         else:
             win.send("Your permission level is {}.".format(user.get_permission_level()))
             return True
-
-module_class = Level

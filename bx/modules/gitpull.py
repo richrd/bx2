@@ -19,5 +19,3 @@ class GitPull(bot_module.BotModule):
             win.send(output)
         except:
             self.logger.exception("Failed to 'git pull'!")
-
-module_class = GitPull

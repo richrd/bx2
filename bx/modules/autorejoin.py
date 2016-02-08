@@ -13,5 +13,3 @@ class AutoRejoin(bot_module.BotModule):
             if event.window.get_name() in self.bot.get_server_channels():
                 if event.user == self.bot.get_bot_user():
                     self.bot.irc.join(event.window.get_name())
-
-module_class = AutoRejoin

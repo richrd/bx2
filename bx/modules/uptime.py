@@ -13,6 +13,3 @@ class Uptime(bot_module.BotModule):
         d, h = divmod(h, 24)
         run_time = "%d days %d:%02d:%02d" % (d, h, m, s)
         win.send(run_time)
-
-
-module_class = Uptime

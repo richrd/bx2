@@ -18,5 +18,3 @@ class Commands(bot_module.BotModule):
                 commands.append(module.get_name())
         commands.sort()
         win.send("Commands available to you: {}".format(", ".join(commands)))
-
-module_class = Commands

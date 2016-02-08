@@ -11,5 +11,3 @@ class GainOp(bot_module.BotModule):
 
     def run_command(self, win, user, data, caller=None):
         self.bot.irc.privmsg("R", "requestop {}".format(win.get_name()))
-
-module_class = GainOp

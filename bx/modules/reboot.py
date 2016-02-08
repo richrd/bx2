@@ -15,5 +15,3 @@ class Reboot(bot_module.BotModule):
             win.send("Reboot failed.")
             return False
         win.send("Done.")
-
-module_class = Reboot

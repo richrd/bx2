@@ -13,5 +13,3 @@ class Join(bot_module.BotModule):
         chans = data.split()
         for chan in chans:
             self.bot.irc.join(chan)
-
-module_class = Join

@@ -17,5 +17,3 @@ class Eval(bot_module.BotModule):
         except:
             self.logger.exception("Eval failed")
             win.send("Eval failed.")
-
-module_class = Eval

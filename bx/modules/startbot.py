@@ -29,5 +29,3 @@ class StartBot(bot_module.BotModule):
             bot = self.bot.app.create_bot(bot_name, config)
             bot.start()
             win.send("Done.")
-
-module_class = StartBot

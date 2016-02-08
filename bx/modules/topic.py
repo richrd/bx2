@@ -14,5 +14,3 @@ class Topic(bot_module.BotModule):
             win.send("sorry, you can't do that")
             return False
         win.change_topic(data)
-
-module_class = Topic

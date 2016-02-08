@@ -16,5 +16,3 @@ class TrustMe(bot_module.BotModule):
         user.account.add_hostname(user.get_hostname())
         win.send("Your hostname is now trusted. You should be automatically logged in next time we meet.")
         user.account.store()
-
-module_class = TrustMe

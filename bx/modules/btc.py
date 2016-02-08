@@ -42,5 +42,3 @@ class BTC(bot_module.BotModule):
             win.send("Sorry, couldn't get exchage rate :(")
             return False
         win.send("BTC: {} USD [{}]".format(rate, self.source))
-
-module_class = BTC

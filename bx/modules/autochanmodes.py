@@ -17,5 +17,3 @@ class AutoChanMode(bot_module.BotModule):
                 event.window.change_modes(add)
             if remove:
                 event.window.change_modes(remove, True)
-
-module_class = AutoChanMode

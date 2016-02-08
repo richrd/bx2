@@ -14,5 +14,3 @@ class Whois(bot_module.BotModule):
 
     def run_command(self, win, user, data, caller=None):
         self.bot.irc.send("WHOIS {}".format(data))
-
-module_class = Whois

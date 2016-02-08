@@ -30,5 +30,3 @@ class Seen(bot_module.BotModule):
             target.get_hostname(),
             )
         win.send(info)
-
-module_class = Seen
