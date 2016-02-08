@@ -253,10 +253,10 @@ class IRCClient:
                 return False
         # Die if the socket is errored
         elif self.socket in errored:
-            self.logger.exceptiong("Socket errored!")
+            self.logger.exception("Socket errored!")
             return False
         else:
-            self.logger.exceptiong("Socket inaccessible!")
+            self.logger.exception("Socket inaccessible!")
             self.disconnect()
             return False
         self.process()
@@ -566,7 +566,7 @@ class IRCClient:
             if err == "timed out":
                 return True
         except socket.error as e:
-            self.logger.exception("receive_to_buffer()", "failed sock.recv", e)
+            self.logger.exception("receive_to_buffer() failed sock.recv ")
             return False
         if not received or len(received) == 0:
             self.logger.warning("Received empty data from socket!")
