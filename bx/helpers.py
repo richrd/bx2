@@ -155,3 +155,7 @@ def get_shell_output(command):
         return None
     raw_str = raw_str.decode("utf-8")
     return raw_str
+
+
+def run_shell_command(command):
+    return os.system(command)
