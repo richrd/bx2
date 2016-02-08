@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class GainOp(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Have the bot request OPs from QuakeNet (if channel has no OPs)."""
 
     @staticmethod

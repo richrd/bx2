@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Topic(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Topic a channel (or rejoin the current channel)."""
 
     @staticmethod

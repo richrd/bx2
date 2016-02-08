@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Nick(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Change the bot nick."""
 
     @staticmethod

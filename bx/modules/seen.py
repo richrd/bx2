@@ -3,7 +3,7 @@ from bx import helpers
 from bx import bot_module
 
 
-class Seen(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Get information about a nick."""
 
     @staticmethod

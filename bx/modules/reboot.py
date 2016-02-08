@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Reboot(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Reboot the bot. Reloads most of the bot code and modules but stays connected."""
 
     @staticmethod

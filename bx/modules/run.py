@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Run(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Run a command as another and  window.
 
     Usage: nick window command

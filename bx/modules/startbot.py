@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class StartBot(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Start a bot."""
 
     @staticmethod

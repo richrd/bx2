@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class AutoOp(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Automatically OPs you when you auth."""
 
     def on_event(self, event):

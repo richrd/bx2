@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class AutoChanMode(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Automatically maintain channel modes according to config."""
 
     def on_event(self, event):

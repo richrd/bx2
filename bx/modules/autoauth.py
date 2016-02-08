@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class AutoAuth(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Automatically auths you if you're hostname is trusted."""
 
     def on_event(self, event):

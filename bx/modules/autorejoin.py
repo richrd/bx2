@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class AutoRejoin(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Take OPs to yourself (default), or a list of nicks, or everyone (with '*')."""
     @staticmethod
     def declare():

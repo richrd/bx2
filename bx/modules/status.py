@@ -5,7 +5,7 @@ from bx import helpers
 from bx import bot_module
 
 
-class Status(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Show bot status information."""
 
     @staticmethod

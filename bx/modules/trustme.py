@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class TrustMe(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Remember your hostname for automatic auth."""
 
     def run_command(self, win, user, data, caller=None):

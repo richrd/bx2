@@ -5,7 +5,7 @@ import time
 import json
 
 
-class BTC(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Check the latest bitcoin exchange rate."""
 
     def init(self):

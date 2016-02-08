@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Level(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Check the permission level of yoursefl or another user."""
 
     def run_command(self, win, user, data, caller=None):

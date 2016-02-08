@@ -3,7 +3,7 @@ from bx import bot_module
 from bx import irc_constants
 
 
-class Highlight(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Highlight everyone on a channel."""
 
     @staticmethod

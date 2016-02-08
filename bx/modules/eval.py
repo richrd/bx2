@@ -3,7 +3,7 @@ from bx import helpers
 from bx import bot_module
 
 
-class Eval(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Evaluate a python expression."""
 
     @staticmethod
