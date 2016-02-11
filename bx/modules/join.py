@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Join(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Join a channel (or rejoin the current channel)."""
 
     @staticmethod
@@ -13,5 +13,3 @@ class Join(bot_module.BotModule):
         chans = data.split()
         for chan in chans:
             self.bot.irc.join(chan)
-
-module_class = Join

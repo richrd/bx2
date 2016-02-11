@@ -9,7 +9,7 @@ import urllib.request
 from bx import bot_module
 
 
-class Url(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Paste titles of urls."""
 
     def on_event(self, event):
@@ -137,5 +137,3 @@ class Url(bot_module.BotModule):
         if not title:
             return False
         return title
-
-module_class = Url

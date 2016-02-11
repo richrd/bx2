@@ -3,7 +3,7 @@ from bx import helpers
 from bx import bot_module
 
 
-class Exec(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Execute python code."""
 
     @staticmethod
@@ -17,5 +17,3 @@ class Exec(bot_module.BotModule):
         except:
             self.logger.exception("Exec failed")
             win.send("Exec failed.")
-
-module_class = Exec

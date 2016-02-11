@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Msg(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Give OPs to yourself (default), or a list of nicks, or everyone (with '*')."""
 
     @staticmethod
@@ -17,5 +17,3 @@ class Msg(bot_module.BotModule):
         nick = parts[0]
         msg = " ".join(parts[1:])
         self.bot.irc.privmsg(nick, msg)
-
-module_class = Msg

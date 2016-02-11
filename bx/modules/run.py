@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Run(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Run a command as another and  window.
 
     Usage: nick window command
@@ -41,5 +41,3 @@ class Run(bot_module.BotModule):
         event.set_user(run_user)
         event.set_window(run_window)
         self.bot.run_command(run_command, run_args, event, user)
-
-module_class = Run

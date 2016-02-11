@@ -4,7 +4,7 @@ import subprocess
 from bx import bot_module
 
 
-class GitPull(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Pull the latest changes to the bot from git."""
 
     @staticmethod
@@ -19,5 +19,3 @@ class GitPull(bot_module.BotModule):
             win.send(output)
         except:
             self.logger.exception("Failed to 'git pull'!")
-
-module_class = GitPull

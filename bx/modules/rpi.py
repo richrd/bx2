@@ -4,7 +4,7 @@ import subprocess
 from bx import bot_module
 
 
-class RPi(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Raspberry Pi status."""
 
     @staticmethod
@@ -33,6 +33,3 @@ class RPi(bot_module.BotModule):
             return output
         except:
             return False
-
-module_class = RPi
-

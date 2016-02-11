@@ -4,7 +4,7 @@ import time
 from bx import bot_module
 
 
-class Uptime(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Check bot uptime and status."""
 
     def run_command(self, win, user, data, caller=None):
@@ -13,6 +13,3 @@ class Uptime(bot_module.BotModule):
         d, h = divmod(h, 24)
         run_time = "%d days %d:%02d:%02d" % (d, h, m, s)
         win.send(run_time)
-
-
-module_class = Uptime

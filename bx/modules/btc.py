@@ -5,7 +5,7 @@ import time
 import json
 
 
-class BTC(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Check the latest bitcoin exchange rate."""
 
     def init(self):
@@ -42,5 +42,3 @@ class BTC(bot_module.BotModule):
             win.send("Sorry, couldn't get exchage rate :(")
             return False
         win.send("BTC: {} USD [{}]".format(rate, self.source))
-
-module_class = BTC

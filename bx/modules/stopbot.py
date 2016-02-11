@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class StopBot(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Stop a bot."""
 
     @staticmethod
@@ -20,5 +20,3 @@ class StopBot(bot_module.BotModule):
         bot = self.bot.app.bots[bot_name]
         bot.stop()
         win.send("done")
-
-module_class = StopBot

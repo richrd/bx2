@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class AutoOp(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Automatically OPs you when you auth."""
 
     def on_event(self, event):
@@ -25,5 +25,3 @@ class AutoOp(bot_module.BotModule):
                 for win_user in event.window.get_users():
                     if win_user.is_trusted_channel(event.window):
                         event.window.give_op(win_user)
-
-module_class = AutoOp

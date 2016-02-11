@@ -126,7 +126,7 @@ class Bot:
                 self.logger.warning("Failed to load module '{}'".format(name))
                 continue
             try:
-                cls = module.module_class
+                cls = module.Module
                 inst = cls(self)
                 options = cls.declare()
                 self.set_module_options(name, inst, options)

@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Nick(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Change the bot nick."""
 
     @staticmethod
@@ -16,5 +16,3 @@ class Nick(bot_module.BotModule):
             win.send("No spaces allowed!")
             return False
         self.bot.irc.change_nick(data)
-
-module_class = Nick

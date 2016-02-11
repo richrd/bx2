@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Help(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Provide basic instructions on using the bot.
 
     Usage: help [module_name]
@@ -40,5 +40,3 @@ class Help(bot_module.BotModule):
 
         for line in lines:
             user.send(line)
-
-module_class = Help

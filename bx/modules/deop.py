@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Deop(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Take OPs to yourself (default), or a list of nicks, or everyone (with '*')."""
 
     @staticmethod
@@ -23,5 +23,3 @@ class Deop(bot_module.BotModule):
             users = [self.bot.get_user(nick) for nick in nicks]
             win.take_op(users)
             return True
-
-module_class = Deop

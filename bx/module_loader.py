@@ -34,8 +34,8 @@ class ModuleLoader:
         path = os.path.join(self.module_path, name + ".py")
         try:
             module = imp.load_source(name, path)
-            if "module_class" not in dir(module):
-                self.logger.error("Module '{}' didn't specify a class!".format(name))
+            if "Module" not in dir(module):
+                self.logger.error("Module '{}' didn't specify a class named 'Module'!".format(name))
                 return False
             return module
         except Exception:

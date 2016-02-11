@@ -3,7 +3,7 @@ from bx import bot_module
 from bx import irc_constants
 
 
-class Highlight(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Highlight everyone on a channel."""
 
     @staticmethod
@@ -15,5 +15,3 @@ class Highlight(bot_module.BotModule):
         my_nick = self.bot.get_nick()
         nicks = [u.get_nick() for u in users if u.get_nick() != my_nick]
         win.send(" ".join(nicks))
-
-module_class = Highlight

@@ -5,7 +5,7 @@ from bx import helpers
 from bx import bot_module
 
 
-class Status(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Show bot status information."""
 
     @staticmethod
@@ -39,7 +39,13 @@ class Status(bot_module.BotModule):
         user_count = len(bot.users)
         auth_count = len([user for user in bot.users if user.is_authed()])
 
-        win.send("[{}] connected {} ({}), users: {} ({} authed)".format(bot_name, timestamp, duration, user_count, auth_count))
+        win.send("[{}] connected {} ({}), users: {} ({} authed)".format(
+            bot_name,
+            timestamp,
+            duration,
+            user_count,
+            auth_count
+        ))
 
         windows = bot.get_windows()
         joined_channels = [str(win) for win in windows if win.is_channel() and win.get_joined()]
@@ -52,5 +58,3 @@ class Status(bot_module.BotModule):
         if queries:
             win.send("queries: {}".format(", ".join(queries)))
         return True
-
-module_class = Status

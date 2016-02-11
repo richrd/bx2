@@ -3,7 +3,7 @@ from bx import bot_module
 from bx import irc_constants
 
 
-class Auth(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Identify yourself with the bot (login).
 
     WARNING: This can only be used via private messages to avoid exposing your username and password.
@@ -36,5 +36,3 @@ class Auth(bot_module.BotModule):
         if not stealth:
             win.send("Wrong username or password.")
         return False
-
-module_class = Auth

@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Part(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Part a channel or the current channel (default)."""
 
     @staticmethod
@@ -19,5 +19,3 @@ class Part(bot_module.BotModule):
             chan = self.bot.get_window(chan)
             if chan:
                 chan.part()
-
-module_class = Part

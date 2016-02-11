@@ -2,7 +2,7 @@
 from bx import bot_module
 
 
-class Commands(bot_module.BotModule):
+class Module(bot_module.BotModule):
     """Provide basic instructions on using the bot.
 
     Usage: help [module_name]
@@ -18,5 +18,3 @@ class Commands(bot_module.BotModule):
                 commands.append(module.get_name())
         commands.sort()
         win.send("Commands available to you: {}".format(", ".join(commands)))
-
-module_class = Commands
