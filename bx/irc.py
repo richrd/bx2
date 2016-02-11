@@ -253,10 +253,10 @@ class IRCClient:
                 return False
         # Die if the socket is errored
         elif self.socket in errored:
-            self.logger.exception("Socket errored!")
+            self.logger.error("Socket errored!")
             return False
         else:
-            self.logger.exception("Socket inaccessible!")
+            self.logger.error("Socket inaccessible!")
             self.disconnect()
             return False
         self.process()
