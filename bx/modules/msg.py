@@ -3,7 +3,7 @@ from bx import bot_module
 
 
 class Module(bot_module.BotModule):
-    """Give OPs to yourself (default), or a list of nicks, or everyone (with '*')."""
+    """Send a message to a channel or user."""
 
     @staticmethod
     def declare():
@@ -14,6 +14,6 @@ class Module(bot_module.BotModule):
         if len(parts) < 2:
             win.send("Provide channel or nick and message.")
             return False
-        nick = parts[0]
+        target = parts[0]
         msg = " ".join(parts[1:])
-        self.bot.irc.privmsg(nick, msg)
+        self.bot.irc.privmsg(target, msg)
