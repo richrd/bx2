@@ -241,6 +241,16 @@ class IRCClient:
         except socket.error:
             self.logger.exception("Socket error!")
             return False
+        except ValueError:
+            # Socket appears to close occasionally without notice.
+            # Specifically this only seems to happen on bot reboot.
+            # Details:
+            # ValueError: file descriptor cannot be a negative integer (-1)
+            # self.socket == <socket.socket [closed] fd=-1, family=AddressFamily.AF_INET, type=2049, proto=0>
+            self.logger.exception("Socket closed!")
+            self.disconnect()
+            return False
+
         # Try to read from the socket
         if self.socket in readable:
             if not self.receive_to_buffer():  # If no data received, sock is dead
@@ -350,7 +360,7 @@ class IRCClient:
         # TODO: wrap long msgs into multiple NOTICEs
         self.send("NOTICE {} :{}".format(dest, msg))
 
-    def action(self, dest, msg):
+    def ctcp_action(self, dest, msg):
         self.privmsg(dest, "\x01ACTION {}\x01".format(msg))
 
     def set_channel_user_modes(self, chan, nickmodes, operation=True):
