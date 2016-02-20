@@ -90,7 +90,7 @@ class Module(bot_module.BotModule):
         # instantiate the parser and fed it some HTML
         parser = TitleParser()
         parser.feed(data)
-        title = parser.title or False
+        title = parser.title.strip() or False
         return title
 
     def get_url_title(self, url):
