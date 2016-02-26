@@ -1,7 +1,7 @@
 
 # Unresolved
 
-## Reconnect Race
+## Reconnect race
 
 *Description*
 
@@ -20,12 +20,20 @@ The worst case scenario is an infinite wait time for one server, blocking the ot
  > Add reconnect_schedule (unix timestamp) to bot and check it on each maintain
  > When time.time() passes reconnect_schedule initiate the reconnect and remove reconnect_schedule
 
+## Multiple queries with same name
 
-18
+The bot acumulates multiple queries associated to the same nick.
+Might be caused by join/part/quit/auth events.
+Apparently there is a problem with matching PRIVMSG's to existing queries.
+
+*Solution*
+
+Find where the failing matching happens (via testing and bot logs). Fix it.
+
 
 # Resolved
 
-## Reboot Error
+## Reboot error
 
     socket = <socket.socket [closed] fd=-1, family=AddressFamily.AF_INET, type=2049, proto=0>
 
