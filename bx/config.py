@@ -46,6 +46,10 @@ class Account:
     def set_last_seen(self, last_seen):
         self.data["last_seen"] = last_seen
 
+    def set_password(self, new_password):
+        hash = self.config._sha224_hash(new_password)
+        self.data["password"] = hash
+
     #
 
     def get_data(self):
@@ -88,6 +92,7 @@ class Account:
             return False
         print(self)
         print(server)
+        # TODO: implement
 
     def add_hostname(self, hostname):
         self.get_hostnames().append(hostname)
