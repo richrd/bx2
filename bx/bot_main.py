@@ -134,6 +134,9 @@ class Bot:
             except:
                 self.logger.exception("Failed to load module '{}'!".format(name))
 
+    def set_running(self, running):
+        self.running = running
+
     def set_module_options(self, name, instance, options):
         """Set module options on a module instance.
 

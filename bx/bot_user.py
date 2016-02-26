@@ -49,6 +49,9 @@ class User:
             return True
         return False
 
+    def get_account(self):
+        return self.account
+
     def get_nick(self):
         return self.nick
 
