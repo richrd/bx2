@@ -18,9 +18,11 @@ class ModuleLoader:
         contents = os.listdir(self.module_path)
         modules = []
         for name in contents:
+            # Skip hidden and underscore files
             if name[0] in [".", "_"]:
                 continue
             parts = name.split(".")
+            # Skip files without extensions
             if len(parts) < 2:
                 continue
             # only use .py modules
@@ -51,7 +53,7 @@ class ModuleLoader:
 
 if __name__ == "__main__":
     ml = ModuleLoader()
-    ml.set_module_path("/home/wavi/Code/python/bx2/bx/modules")
+    ml.set_module_path("bx/modules")
     mods = ml.get_available_modules()
     print(mods)
     mod = ml.load_module("ping")
