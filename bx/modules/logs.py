@@ -35,8 +35,11 @@ class Module(bot_module.BotModule):
             msg_dest.send("Sorry, you can't get logs on this channel.")
             return False
         id = self.rand_id()
-        if data.lower() == "count":
-            msg_dest.send("This window has {} log records.".format(len(win.get_log())))
+        if data.lower() == "stats":
+            count = len(win.get_log())
+            start_time = win.get_log()[0].get_time()
+            time_str = datetime.datetime.fromtimestamp(start_time).strftime('%A %d.%m.%Y %H:%M')
+            msg_dest.send("This window has {} log records starting from {}.".format(count, time_str))
             return True
         duration = helpers.str_to_seconds(data)
         if duration:
